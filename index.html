@@ -1,303 +1,266 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Focus & Rest Timer</title>
-    <style>
-        /* Apple-Inspired Dark Mode Theme */
-        :root {
-            --bg-color: #1C1C1E;
-            --surface-color: #2C2C2E;
-            --hover-color: #3A3A3C;
-            --text-main: #FFFFFF;
-            --text-muted: #8E8E93;
-            --blue-accent: #0A84FF;
-            --orange-accent: #FF9F0A;
-            --red-accent: #FF453A;
-        }
+// --- State Variables ---
+let timerState = "IDLE"; // IDLE, WORK, RATING, BREAK
+let currentStartTime = 0;
+let pendingWorkSec = 0;
+let plannedBreakSec = 0;
+let clockInterval;
+let alertShown = false;
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            user-select: none;
-        }
+// --- NEW hierarchical data models ---
+let currentSession = null;
+let currentBlock = null;
 
-        .app-container {
-            width: 380px;
-            text-align: center;
-            padding: 20px;
-        }
+// UI Elements
+const modeLabel = document.getElementById("modeLabel");
+const timeLabel = document.getElementById("timeLabel");
+const targetLabel = document.getElementById("targetLabel");
+const progressBar = document.getElementById("progressBar");
+const startBtn = document.getElementById("startBtn");
+const restBtn = document.getElementById("restBtn");
+const ratioSlider = document.getElementById("ratioSlider");
+const ratioText = document.getElementById("ratioText");
 
-        /* Typography */
-        .target-label { color: var(--text-muted); font-size: 14px; font-weight: 500; height: 20px; margin-bottom: 10px; }
-        .mode-label { font-size: 18px; font-weight: 700; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 5px; transition: color 0.3s;}
-        .time-label { font-size: 80px; font-weight: 700; margin: 0 0 20px 0; tabular-nums: normal; transition: color 0.3s;}
+// Audio
+const chime = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+
+function updateRatioText() {
+    ratioText.innerText = `Break Ratio: ${ratioSlider.value}%`;
+}
+
+function formatTime(totalSeconds) {
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = Math.floor(totalSeconds % 60);
+    if (h > 0) return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+}
+
+// --- Save Session Logic ---
+function saveSessionToHistory() {
+    if (!currentSession) return;
+    
+    // Calculate total session duration
+    currentSession.endTime = Date.now();
+    currentSession.totalDurationSec = parseFloat(((currentSession.endTime - currentSession.startTime) / 1000).toFixed(2));
+    
+    // Fetch existing sessions, append, and save
+    let sessions = JSON.parse(localStorage.getItem("studySessions")) || [];
+    sessions.push(currentSession);
+    localStorage.setItem("studySessions", JSON.stringify(sessions));
+    
+    // Reset
+    currentSession = null;
+    currentBlock = null;
+}
+
+// --- Core Logic ---
+function startWork() {
+    if (timerState === "WORK") return;
+
+    const now = Date.now();
+
+    // 1. If no active focus session exists, create one
+    if (!currentSession) {
+        currentSession = {
+            sessionId: now,
+            startTime: now,
+            date: new Date().toLocaleDateString(),
+            blocks: [],
+            status: "COMPLETED" // Defaults to completed unless interrupted
+        };
+    }
+
+    // 2. If coming from a break, close the break block
+    if (timerState === "BREAK" && currentBlock) {
+        currentBlock.endTime = now;
+        currentBlock.durationSec = parseFloat(((now - currentBlock.startTime) / 1000).toFixed(2));
+        currentBlock.status = "COMPLETED";
+        currentSession.blocks.push(currentBlock);
+    }
+
+    // 3. Create a focus block inside the session
+    currentBlock = {
+        blockId: now,
+        type: "FOCUS",
+        startTime: now,
+        status: "ACTIVE"
+    };
+
+    timerState = "WORK";
+    currentStartTime = now;
+    
+    // Visuals
+    modeLabel.innerText = "FOCUS";
+    modeLabel.className = "mode-label text-work";
+    timeLabel.className = "time-label text-work";
+    targetLabel.innerText = "";
+    
+    progressBar.style.width = "100%";
+    progressBar.className = "progress-fill bg-work indeterminate";
+
+    startBtn.className = "btn-rest"; 
+    restBtn.className = "btn-rest bg-rest"; 
+
+    startClock();
+}
+
+function initiateRest() {
+    if (timerState !== "WORK") return;
+
+    pendingWorkSec = (Date.now() - currentStartTime) / 1000;
+    
+    timerState = "RATING";
+    stopClock();
+    
+    // Show rating modal
+    document.getElementById("modalSlider").value = 5;
+    document.getElementById("modalRatingVal").innerText = "5";
+    document.getElementById("ratingModal").style.display = "flex";
+}
+
+function updateModalVal() {
+    document.getElementById("modalRatingVal").innerText = document.getElementById("modalSlider").value;
+}
+
+function submitRatingAndRest() {
+    const rating = parseInt(document.getElementById("modalSlider").value);
+    document.getElementById("ratingModal").style.display = "none";
+    
+    const now = Date.now();
+
+    // 1. Close current focus block
+    if (currentBlock && currentBlock.type === "FOCUS") {
+        currentBlock.endTime = now;
+        currentBlock.durationSec = parseFloat(pendingWorkSec.toFixed(2));
+        currentBlock.rating = rating;
+        currentBlock.status = "COMPLETED";
+        currentSession.blocks.push(currentBlock);
+    }
+
+    // Calculate break length
+    const ratio = parseInt(ratioSlider.value) / 100;
+    const calcBreak = pendingWorkSec * ratio;
+    plannedBreakSec = Math.max(calcBreak, 60.0);
+
+    // 2. Create break block inside the same session
+    currentBlock = {
+        blockId: now + 1, // ensure unique ID
+        type: "BREAK",
+        startTime: now,
+        plannedSec: parseFloat(plannedBreakSec.toFixed(2)),
+        status: "ACTIVE"
+    };
+
+    timerState = "BREAK";
+    currentStartTime = now;
+    alertShown = false;
+
+    // Visuals
+    modeLabel.innerText = "REST";
+    modeLabel.className = "mode-label text-rest";
+    timeLabel.className = "time-label text-rest";
+    timeLabel.innerText = "00:00";
+    targetLabel.innerText = `Target: ${formatTime(plannedBreakSec)}`;
+    
+    progressBar.className = "progress-fill bg-rest";
+    progressBar.style.width = "0%";
+
+    startBtn.className = "btn-work"; 
+    restBtn.className = "btn-rest"; 
+
+    startClock();
+}
+
+function endSession() {
+    if (timerState === "IDLE") return;
+    
+    stopClock();
+    const now = Date.now();
+    
+    // 1. Close current block
+    if (currentBlock) {
+        currentBlock.endTime = now;
+        currentBlock.durationSec = parseFloat(((now - currentBlock.startTime) / 1000).toFixed(2));
         
-        /* Progress Bar */
-        .progress-bg { background-color: var(--surface-color); height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 30px; }
-        .progress-fill { height: 100%; width: 0%; background-color: var(--text-muted); transition: width 0.1s linear, background-color 0.3s; }
-        .indeterminate { animation: pulse 1.5s infinite alternate; }
-        @keyframes pulse { 0% { opacity: 0.4; } 100% { opacity: 1; } }
+        // If they end during a focus block without rating it, mark it as interrupted
+        if (timerState === "WORK" || timerState === "RATING") {
+            currentBlock.status = "INTERRUPTED";
+        } else {
+            currentBlock.status = "COMPLETED";
+        }
+        currentSession.blocks.push(currentBlock);
+    }
 
-        /* Slider */
-        .ratio-label { color: var(--text-muted); font-size: 15px; margin-bottom: 10px; }
-        input[type="range"] { -webkit-appearance: none; width: 80%; background: var(--surface-color); height: 6px; border-radius: 3px; outline: none; margin-bottom: 40px;}
-        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #FFF; cursor: pointer; }
+    // 2. Close parent focus session
+    saveSessionToHistory();
 
-        /* Buttons */
-        .btn-row { display: flex; justify-content: space-between; gap: 15px; margin-bottom: 20px; }
-        button { border: none; border-radius: 25px; font-size: 16px; font-weight: 600; padding: 15px; cursor: pointer; width: 100%; transition: all 0.2s; font-family: inherit;}
+    // 3. Reset UI
+    timerState = "IDLE";
+    modeLabel.innerText = "READY";
+    modeLabel.className = "mode-label";
+    timeLabel.className = "time-label";
+    timeLabel.innerText = "00:00:00";
+    targetLabel.innerText = "";
+    document.title = "Focus & Rest";
+    
+    progressBar.className = "progress-fill";
+    progressBar.style.width = "0%";
+    
+    startBtn.className = "btn-work";
+    restBtn.className = "btn-rest";
+
+    alert("Session successfully logged and saved!");
+}
+
+// --- Auto-Close if User Disappears ---
+// This listens for the user closing the tab, refreshing, or navigating away
+window.addEventListener('beforeunload', () => {
+    if (currentSession && timerState !== "IDLE") {
+        const now = Date.now();
         
-        .btn-work { background-color: var(--blue-accent); color: white; }
-        .btn-work:hover { background-color: #007AFF; }
+        // Auto-close current block as interrupted
+        if (currentBlock) {
+            currentBlock.endTime = now;
+            currentBlock.durationSec = parseFloat(((now - currentBlock.startTime) / 1000).toFixed(2));
+            currentBlock.status = "ABANDONED";
+            currentSession.blocks.push(currentBlock);
+        }
         
-        .btn-rest { background-color: var(--surface-color); color: white; }
-        .btn-rest:hover { background-color: var(--hover-color); }
+        // Auto-close parent focus session
+        currentSession.status = "ABANDONED";
+        saveSessionToHistory();
+    }
+});
+
+// --- Timer Loop ---
+function startClock() {
+    stopClock();
+    clockInterval = setInterval(() => {
+        const elapsed = (Date.now() - currentStartTime) / 1000;
+        const formatted = formatTime(elapsed);
         
-        .btn-end { background-color: transparent; color: var(--red-accent); width: auto; margin: 0 auto; display: block; font-size: 15px;}
-        .btn-end:hover { background-color: var(--surface-color); }
+        timeLabel.innerText = formatted;
+        const icon = timerState === "WORK" ? "🛠" : "☕️";
+        document.title = `${icon} ${formatted} - Focus & Rest`;
 
-        /* Rating Modal */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(5px); }
-        .modal { background: var(--surface-color); padding: 30px; border-radius: 20px; width: 320px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .modal h3 { margin-top: 0; font-size: 18px; }
-        .rating-val { font-size: 40px; font-weight: bold; color: var(--blue-accent); margin: 10px 0; }
-        .modal-labels { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-top: -10px; margin-bottom: 25px; }
-        .btn-submit { background-color: var(--blue-accent); color: white; }
+        if (timerState === "BREAK") {
+            let fill = Math.min((elapsed / plannedBreakSec) * 100, 100);
+            progressBar.style.width = `${fill}%`;
 
-        /* Color States */
-        .text-work { color: var(--blue-accent) !important; }
-        .text-rest { color: var(--orange-accent) !important; }
-        .text-end { color: var(--red-accent) !important; }
-        .bg-work { background-color: var(--blue-accent) !important; }
-        .bg-rest { background-color: var(--orange-accent) !important; }
-    </style>
-</head>
-<body>
-
-    <div class="app-container">
-        <div class="target-label" id="targetLabel"></div>
-        <div class="mode-label" id="modeLabel">READY</div>
-        <div class="time-label" id="timeLabel">00:00:00</div>
-        
-        <div class="progress-bg">
-            <div class="progress-fill" id="progressBar"></div>
-        </div>
-
-        <div class="ratio-label" id="ratioText">Break Ratio: 20%</div>
-        <input type="range" id="ratioSlider" min="1" max="35" value="20" oninput="updateRatioText()">
-
-        <div class="btn-row">
-            <button class="btn-work" id="startBtn" onclick="startWork()">Start Focus</button>
-            <button class="btn-rest" id="restBtn" onclick="initiateRest()">Rest</button>
-        </div>
-        <button class="btn-end" onclick="endSession()">End Session</button>
-        
-        <div style="margin-top: 30px;">
-            <a href="stats.html" style="color: var(--text-muted); text-decoration: none; font-size: 13px; font-weight: 600;">📊 View Study Stats & History</a>
-        </div>
-    </div> <div class="modal-overlay" id="ratingModal">
-        <div class="modal">
-            <h3>How productive was this session?</h3>
-            <div class="rating-val" id="modalRatingVal">5</div>
-            <input type="range" id="modalSlider" min="0" max="10" value="5" oninput="updateModalVal()">
-            <div class="modal-labels">
-                <span>0 - Unfocused</span>
-                <span>10 - Deep Focus</span>
-            </div>
-            <button class="btn-submit" onclick="submitRatingAndRest()">Start Break</button>
-        </div>
-    </div>
-
-    <script>
-        // --- State Variables ---
-        let timerState = "IDLE"; // IDLE, WORK, RATING, BREAK
-        let currentStartTime = 0;
-        let totalWorkSec = 0;
-        let totalBreakSec = 0;
-        let pendingWorkSec = 0;
-        let plannedBreakSec = 0;
-        let clockInterval;
-        let alertShown = false;
-
-        // UI Elements
-        const modeLabel = document.getElementById("modeLabel");
-        const timeLabel = document.getElementById("timeLabel");
-        const targetLabel = document.getElementById("targetLabel");
-        const progressBar = document.getElementById("progressBar");
-        const startBtn = document.getElementById("startBtn");
-        const restBtn = document.getElementById("restBtn");
-        const ratioSlider = document.getElementById("ratioSlider");
-        const ratioText = document.getElementById("ratioText");
-
-        // Audio
-        const chime = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
-
-        function updateRatioText() {
-            ratioText.innerText = `Break Ratio: ${ratioSlider.value}%`;
-        }
-
-        function formatTime(totalSeconds) {
-            const h = Math.floor(totalSeconds / 3600);
-            const m = Math.floor((totalSeconds % 3600) / 60);
-            const s = Math.floor(totalSeconds % 60);
-            if (h > 0) return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-        }
-
-        // --- Logging Data to Browser Storage ---
-        function logSession(type, duration, rating = null) {
-            const record = {
-                type: type,
-                duration_seconds: parseFloat(duration.toFixed(2)),
-                duration_formatted: formatTime(duration),
-                timestamp: new Date().toLocaleString(),
-                focus_rating: rating
-            };
-            
-            // Fetch existing logs from local storage or create empty array
-            let logs = JSON.parse(localStorage.getItem("studyTimerLogs")) || [];
-            logs.push(record);
-            localStorage.setItem("studyTimerLogs", JSON.stringify(logs));
-        }
-
-        // --- Core Logic ---
-        function startWork() {
-            if (timerState === "WORK") return;
-
-            if (timerState === "BREAK") {
-                const breakElapsed = (Date.now() - currentStartTime) / 1000;
-                logSession("BREAK", breakElapsed);
-            }
-
-            timerState = "WORK";
-            currentStartTime = Date.now();
-            
-            // Visuals
-            modeLabel.innerText = "FOCUS";
-            modeLabel.className = "mode-label text-work";
-            timeLabel.className = "time-label text-work";
-            targetLabel.innerText = "";
-            
-            progressBar.style.width = "100%";
-            progressBar.className = "progress-fill bg-work indeterminate";
-
-            startBtn.className = "btn-rest"; // Dim work button
-            restBtn.className = "btn-rest bg-rest"; // Highlight rest button
-
-            startClock();
-        }
-
-        function initiateRest() {
-            if (timerState !== "WORK") return;
-
-            pendingWorkSec = (Date.now() - currentStartTime) / 1000;
-            totalWorkSec += pendingWorkSec;
-            
-            timerState = "RATING";
-            stopClock();
-            
-            // Show modal
-            document.getElementById("modalSlider").value = 5;
-            document.getElementById("modalRatingVal").innerText = "5";
-            document.getElementById("ratingModal").style.display = "flex";
-        }
-
-        function updateModalVal() {
-            document.getElementById("modalRatingVal").innerText = document.getElementById("modalSlider").value;
-        }
-
-        function submitRatingAndRest() {
-            const rating = parseInt(document.getElementById("modalSlider").value);
-            document.getElementById("ratingModal").style.display = "none";
-            
-            logSession("WORK", pendingWorkSec, rating);
-
-            const ratio = parseInt(ratioSlider.value) / 100;
-            const calcBreak = pendingWorkSec * ratio;
-            plannedBreakSec = Math.max(calcBreak, 60.0);
-
-            timerState = "BREAK";
-            currentStartTime = Date.now();
-            alertShown = false;
-
-            // Visuals
-            modeLabel.innerText = "REST";
-            modeLabel.className = "mode-label text-rest";
-            timeLabel.className = "time-label text-rest";
-            timeLabel.innerText = "00:00";
-            targetLabel.innerText = `Target: ${formatTime(plannedBreakSec)}`;
-            
-            progressBar.className = "progress-fill bg-rest";
-            progressBar.style.width = "0%";
-
-            startBtn.className = "btn-work"; 
-            restBtn.className = "btn-rest"; 
-
-            startClock();
-        }
-
-        function endSession() {
-            timerState = "IDLE";
-            stopClock();
-            
-            modeLabel.innerText = "READY";
-            modeLabel.className = "mode-label";
-            timeLabel.className = "time-label";
-            timeLabel.innerText = "00:00:00";
-            targetLabel.innerText = "";
-            document.title = "Focus & Rest";
-            
-            progressBar.className = "progress-fill";
-            progressBar.style.width = "0%";
-            
-            startBtn.className = "btn-work";
-            restBtn.className = "btn-rest";
-
-            alert(`Session Ended. Partially completed blocks were not saved to history.`);
-            totalWorkSec = 0; totalBreakSec = 0;
-        }
-
-        // --- Timer Loop ---
-        function startClock() {
-            stopClock();
-            clockInterval = setInterval(() => {
-                const elapsed = (Date.now() - currentStartTime) / 1000;
-                const formatted = formatTime(elapsed);
+            if (elapsed >= plannedBreakSec && !alertShown) {
+                alertShown = true;
+                chime.play();
+                modeLabel.innerText = "TIME UP";
+                modeLabel.className = "mode-label text-end";
+                timeLabel.className = "time-label text-end";
+                progressBar.className = "progress-fill bg-end";
                 
-                timeLabel.innerText = formatted;
-                const icon = timerState === "WORK" ? "🛠" : "☕️";
-                document.title = `${icon} ${formatted} - Focus & Rest`;
-
-                if (timerState === "BREAK") {
-                    let fill = Math.min((elapsed / plannedBreakSec) * 100, 100);
-                    progressBar.style.width = `${fill}%`;
-
-                    if (elapsed >= plannedBreakSec && !alertShown) {
-                        alertShown = true;
-                        chime.play();
-                        modeLabel.innerText = "TIME UP";
-                        modeLabel.className = "mode-label text-end";
-                        timeLabel.className = "time-label text-end";
-                        progressBar.className = "progress-fill bg-end";
-                        
-                        // Small timeout to allow UI to paint red before native alert blocks it
-                        setTimeout(() => alert("Your earned break time is up! Ready to focus?"), 100);
-                    }
-                }
-            }, 100);
+                setTimeout(() => alert("Your earned break time is up! Ready to focus?"), 100);
+            }
         }
+    }, 100);
+}
 
-        function stopClock() {
-            if (clockInterval) clearInterval(clockInterval);
-        }
-    </script>
-</body>
-</html>
+function stopClock() {
+    if (clockInterval) clearInterval(clockInterval);
+}
