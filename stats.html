@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -134,7 +133,6 @@
 
     <script>
         // --- Data Fetching ---
-        // We now pull from 'studySessions' instead of 'studyTimerLogs'
         const sessions = JSON.parse(localStorage.getItem('studySessions')) || [];
         
         function formatTime(totalSeconds) {
@@ -190,12 +188,10 @@
         const weekFocus = []; const weekBreak = [];
         const dayFocus = []; const dayBreak = [];
 
-        // Extract individual blocks from the sessions for statistical calculations
         sessions.forEach(session => {
             if (!session.blocks) return;
 
             session.blocks.forEach(block => {
-                // Skip zero-duration blocks
                 if (!block.durationSec || block.durationSec <= 0) return;
 
                 const blockDate = new Date(block.startTime);
@@ -271,7 +267,6 @@
             const reversedSessions = [...sessions].reverse();
             reversedSessions.forEach(session => {
                 
-                // 1. Create Parent Session Row
                 const sRow = document.createElement("tr");
                 sRow.className = "session-row";
                 const sessionStart = new Date(session.startTime).toLocaleString();
@@ -285,7 +280,6 @@
                 `;
                 historyBody.appendChild(sRow);
 
-                // 2. Create Child Block Rows
                 if (session.blocks && session.blocks.length > 0) {
                     session.blocks.forEach(block => {
                         const bRow = document.createElement("tr");
@@ -309,5 +303,3 @@
     </script>
 </body>
 </html>
-
-```
