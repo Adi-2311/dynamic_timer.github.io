@@ -1,3 +1,10 @@
+This is the perfect next step! Since we upgraded your data architecture to a parent-child structure (Sessions containing Blocks), your `stats.html` needs to know how to read that new format.
+
+I have completely overhauled the JavaScript in your stats page to parse the new `studySessions` storage key. Because your new data format is so robust, I also took the liberty of updating the **Session History Log** table to display your data hierarchically! Now, it groups your Focus and Rest blocks underneath their parent Session, clearly marking if a block was COMPLETED, INTERRUPTED, or ABANDONED.
+
+Here is your fully updated `stats.html` code. You can copy and paste this directly over your old file:
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,9 +21,6 @@
             --text-muted: #8E8E93;
             --blue-accent: #0A84FF;
             --orange-accent: #FF9F0A;
-            --red-accent: #FF453A;
-            --green-accent: #32D74B;
-            --yellow-accent: #FFD60A;
             --border-color: #38383A;
         }
 
@@ -82,18 +86,15 @@
         
         .badge-work { color: var(--blue-accent); font-weight: bold; }
         .badge-break { color: var(--orange-accent); font-weight: bold; }
-        .rank-badge { font-weight: 800; color: var(--yellow-accent); } 
+        .rank-badge { font-weight: 800; color: #FFD60A; } /* Gold for Leaderboard */
         
         .empty-state { text-align: center; padding: 40px; color: var(--text-muted); font-style: italic; }
 
-        /* Nested Session Log Styles */
-        .session-header { background-color: var(--bg-color); border-bottom: 2px solid var(--border-color); }
-        .session-header td { padding: 10px 20px; font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
-        .child-row td:first-child { padding-left: 40px; color: var(--text-muted); font-family: monospace; }
-        
-        .status-completed { color: var(--green-accent); font-weight: bold; font-size: 12px;}
-        .status-interrupted { color: var(--yellow-accent); font-weight: bold; font-size: 12px;}
-        .status-abandoned { color: var(--red-accent); font-weight: bold; font-size: 12px;}
+        /* Hierarchy Styling for History Table */
+        .session-row { background-color: #242426; border-top: 3px solid var(--bg-color); }
+        .session-row td { font-weight: 600; padding: 12px 20px; }
+        .block-row td:first-child { padding-left: 40px; color: var(--text-muted); font-size: 12px; }
+        .status-tag { font-size: 11px; color: var(--text-muted); font-weight: normal; margin-left: 5px; text-transform: lowercase;}
     </style>
 </head>
 <body>
@@ -132,13 +133,14 @@
 
         <h2>SESSION HISTORY LOG</h2>
         <table id="table-history">
-            <thead><tr><th>Time</th><th>Type</th><th>Duration</th><th>Rating</th><th>Status</th></tr></thead>
+            <thead><tr><th>Date & Time</th><th>Type</th><th>Duration</th><th>Rating</th></tr></thead>
             <tbody></tbody>
         </table>
     </div>
 
     <script>
-        // Data Fetching
+        // --- Data Fetching ---
+        // We now pull from 'studySessions' instead of 'studyTimerLogs'
         const sessions = JSON.parse(localStorage.getItem('studySessions')) || [];
         
         function formatTime(totalSeconds) {
@@ -150,7 +152,7 @@
             return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
         }
 
-        // Math Statistics Functions
+        // --- Math Statistics Functions ---
         function getMean(arr) {
             if (!arr.length) return 0;
             return arr.reduce((a, b) => a + b, 0) / arr.length;
@@ -190,40 +192,35 @@
 
         // --- Flatten Data & Time Filtering ---
         const now = new Date();
-        let allBlocks = [];
-        
         const allFocus = []; const allBreak = [];
         const weekFocus = []; const weekBreak = [];
         const dayFocus = []; const dayBreak = [];
 
-        // Unpack blocks from sessions
+        // Extract individual blocks from the sessions for statistical calculations
         sessions.forEach(session => {
-            if (session.blocks) {
-                session.blocks.forEach(block => {
-                    const blockDate = new Date(block.startTime);
-                    const daysOld = (now - blockDate) / (1000 * 60 * 60 * 24);
-                    const isToday = blockDate.toDateString() === now.toDateString();
-                    
-                    // Add to flat list for the leaderboard
-                    allBlocks.push(block);
+            if (!session.blocks) return;
 
-                    // Sort into stat categories (only counting data that actually has a duration)
-                    if (block.durationSec > 0) {
-                        if (block.type === "FOCUS") {
-                            allFocus.push(block);
-                            if (daysOld <= 7) weekFocus.push(block);
-                            if (isToday) dayFocus.push(block);
-                        } else if (block.type === "BREAK") {
-                            allBreak.push(block);
-                            if (daysOld <= 7) weekBreak.push(block);
-                            if (isToday) dayBreak.push(block);
-                        }
-                    }
-                });
-            }
+            session.blocks.forEach(block => {
+                // Skip zero-duration blocks
+                if (!block.durationSec || block.durationSec <= 0) return;
+
+                const blockDate = new Date(block.startTime);
+                const daysOld = (now - blockDate) / (1000 * 60 * 60 * 24);
+                const isToday = blockDate.toDateString() === now.toDateString();
+                
+                if (block.type === "FOCUS") {
+                    allFocus.push(block);
+                    if (daysOld <= 7) weekFocus.push(block);
+                    if (isToday) dayFocus.push(block);
+                } else if (block.type === "BREAK") {
+                    allBreak.push(block);
+                    if (daysOld <= 7) weekBreak.push(block);
+                    if (isToday) dayBreak.push(block);
+                }
+            });
         });
 
-        // DOM Rendering Helper
+        // --- DOM Rendering Helper ---
         function renderStatRow(tbodyId, type, stats) {
             const tbody = document.querySelector(`#${tbodyId} tbody`);
             const row = document.createElement("tr");
@@ -244,7 +241,7 @@
             tbody.appendChild(row);
         }
 
-        // Render Stats Tables
+        // --- Render Stats Tables ---
         renderStatRow("table-all-time", "FOCUS", processGroup(allFocus));
         renderStatRow("table-all-time", "BREAK", processGroup(allBreak));
         
@@ -254,10 +251,9 @@
         renderStatRow("table-today", "FOCUS", processGroup(dayFocus));
         renderStatRow("table-today", "BREAK", processGroup(dayBreak));
 
-        // Render Leaderboard (Only COMPLETED Focus Blocks)
+        // --- Render Leaderboard ---
         const leaderboardBody = document.querySelector("#table-leaderboard tbody");
-        const completedFocusBlocks = allBlocks.filter(b => b.type === "FOCUS" && b.status === "COMPLETED");
-        const sortedFocus = completedFocusBlocks.sort((a, b) => b.durationSec - a.durationSec);
+        const sortedFocus = [...allFocus].sort((a, b) => b.durationSec - a.durationSec);
         const ranks = ["1ST", "2ND", "3RD", "4TH", "5TH"];
         
         for (let i = 0; i < 5; i++) {
@@ -265,7 +261,7 @@
             if (i < sortedFocus.length) {
                 const b = sortedFocus[i];
                 const rating = b.rating != null ? `${b.rating}/10` : "---";
-                const dateStr = new Date(b.startTime).toLocaleDateString();
+                const dateStr = new Date(b.startTime).toLocaleString();
                 row.innerHTML = `<td class="rank-badge">${ranks[i]}</td><td>${formatTime(b.durationSec)}</td><td>${rating}</td><td>${dateStr}</td>`;
             } else {
                 row.innerHTML = `<td>${ranks[i]}</td><td>---</td><td>---</td><td>---</td>`;
@@ -273,57 +269,51 @@
             leaderboardBody.appendChild(row);
         }
 
-        // Render Nested Session History Log (Newest First)
+        // --- Render Hierarchical History Log ---
         const historyBody = document.querySelector("#table-history tbody");
         if (sessions.length === 0) {
-            historyBody.innerHTML = `<tr><td colspan="5" class="empty-state">No sessions recorded yet. Start focusing!</td></tr>`;
+            historyBody.innerHTML = `<tr><td colspan="4" class="empty-state">No sessions recorded yet. Start focusing!</td></tr>`;
         } else {
             const reversedSessions = [...sessions].reverse();
-            
             reversedSessions.forEach(session => {
-                // 1. Create Session Header Row
-                const sessionRow = document.createElement("tr");
-                sessionRow.className = "session-header";
-                const sessionDate = new Date(session.startTime).toLocaleString();
+                
+                // 1. Create Parent Session Row
+                const sRow = document.createElement("tr");
+                sRow.className = "session-row";
+                const sessionStart = new Date(session.startTime).toLocaleString();
                 const totalDur = formatTime(session.totalDurationSec || 0);
+                const sessionStatus = session.status !== "COMPLETED" ? `<span class="status-tag">(${session.status})</span>` : "";
                 
-                // Determine session status color
-                let sColor = "status-completed";
-                if(session.status === "ABANDONED") sColor = "status-abandoned";
-                
-                sessionRow.innerHTML = `<td colspan="5">Session: ${sessionDate} &nbsp;|&nbsp; Total Time: ${totalDur} &nbsp;|&nbsp; <span class="${sColor}">${session.status}</span></td>`;
-                historyBody.appendChild(sessionRow);
+                sRow.innerHTML = `
+                    <td colspan="2">📁 Session: ${sessionStart} ${sessionStatus}</td>
+                    <td>${totalDur} Total</td>
+                    <td></td>
+                `;
+                historyBody.appendChild(sRow);
 
-                // 2. Create Rows for Each Block inside the Session
+                // 2. Create Child Block Rows
                 if (session.blocks && session.blocks.length > 0) {
                     session.blocks.forEach(block => {
-                        const row = document.createElement("tr");
-                        row.className = "child-row";
+                        const bRow = document.createElement("tr");
+                        bRow.className = "block-row";
                         const typeClass = block.type === "FOCUS" ? "badge-work" : "badge-break";
                         const rating = block.rating != null ? `${block.rating}/10` : "---";
                         const blockTime = new Date(block.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                        
-                        // Determine block status color
-                        let statusClass = "status-completed";
-                        if(block.status === 'INTERRUPTED') statusClass = 'status-interrupted';
-                        if(block.status === 'ABANDONED') statusClass = 'status-abandoned';
+                        const blockStatus = block.status !== "COMPLETED" ? `<span class="status-tag">(${block.status})</span>` : "";
 
-                        row.innerHTML = `
+                        bRow.innerHTML = `
                             <td>↳ ${blockTime}</td>
-                            <td class="${typeClass}">${block.type}</td>
-                            <td>${formatTime(block.durationSec)}</td>
+                            <td class="${typeClass}">${block.type} ${blockStatus}</td>
+                            <td>${formatTime(block.durationSec || 0)}</td>
                             <td>${rating}</td>
-                            <td class="${statusClass}">${block.status}</td>
                         `;
-                        historyBody.appendChild(row);
+                        historyBody.appendChild(bRow);
                     });
-                } else {
-                    const row = document.createElement("tr");
-                    row.innerHTML = `<td colspan="5" class="empty-state" style="padding: 10px;">No blocks recorded in this session.</td>`;
-                    historyBody.appendChild(row);
                 }
             });
         }
     </script>
 </body>
 </html>
+
+```
