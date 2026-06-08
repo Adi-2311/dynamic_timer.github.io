@@ -1,10 +1,4 @@
-This is the perfect next step! Since we upgraded your data architecture to a parent-child structure (Sessions containing Blocks), your `stats.html` needs to know how to read that new format.
 
-I have completely overhauled the JavaScript in your stats page to parse the new `studySessions` storage key. Because your new data format is so robust, I also took the liberty of updating the **Session History Log** table to display your data hierarchically! Now, it groups your Focus and Rest blocks underneath their parent Session, clearly marking if a block was COMPLETED, INTERRUPTED, or ABANDONED.
-
-Here is your fully updated `stats.html` code. You can copy and paste this directly over your old file:
-
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
