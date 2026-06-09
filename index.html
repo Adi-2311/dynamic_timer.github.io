@@ -353,7 +353,7 @@
             if (timerState === "IDLE" || timerState === "READY") {
                 initiateNewSession();
             } else if (timerState === "BREAK") {
-                startNewFocusBlock();
+                startNewFocusBlock(true); // <--- We pass TRUE here to signify we are returning from a break!
             } else if (timerState === "WORK" && isAwaitingTask) {
                 lockInNewTask(taskInput.value.trim());
             }
@@ -403,6 +403,7 @@
         // STEP 1: Fire up the brand new session and grab the Macro Goal
         function initiateNewSession() {
             sessionGoalText = taskInput.value.trim() || "Deep Work Session";
+            activeTaskText = ""; // Clear any leftover task memory
             
             // Smooth animation to push the goal up to the top label
             modeLabel.style.opacity = "0";
@@ -423,11 +424,11 @@
                 sessionGoal: sessionGoalText
             };
             
-            startNewFocusBlock();
+            startNewFocusBlock(false); // Starting fresh, so not returning from break
         }
 
         // STEP 2: Start a block, start the clock, and wait for the Micro Task
-        function startNewFocusBlock() {
+        function startNewFocusBlock(returningFromBreak = false) {
             const now = Date.now();
 
             if (timerState === "BREAK" && currentBlock) {
@@ -440,7 +441,7 @@
             currentBlock = {
                 blockId: now,
                 type: "FOCUS",
-                taskName: "Deep Focus", // Default placeholder
+                taskName: returningFromBreak ? activeTaskText : "Deep Focus", // Inherit task if returning
                 startTime: now,
                 status: "ACTIVE"
             };
@@ -448,22 +449,33 @@
             timerState = "WORK";
             currentStartTime = now;
             
-            // Reset UI for the Micro-Task
-            taskDisplayWrapper.style.display = "none";
-            taskInput.style.display = "block";
-            taskInput.value = "";
-            taskInput.placeholder = "What problem are you solving? (optional)";
-            taskInput.focus();
-            
-            isAwaitingTask = true;
+            if (!returningFromBreak) {
+                // If starting fresh, reset UI for the Micro-Task prompt
+                taskDisplayWrapper.style.display = "none";
+                taskInput.style.display = "block";
+                taskInput.value = "";
+                taskInput.placeholder = "What problem are you solving? (optional)";
+                taskInput.focus();
+                
+                isAwaitingTask = true;
 
-            // 60-Second Auto-Lock if they don't type anything
-            if (taskPromptTimeout) clearTimeout(taskPromptTimeout);
-            taskPromptTimeout = setTimeout(() => {
-                if (isAwaitingTask) {
-                    lockInNewTask(taskInput.value.trim()); // Captures partial text or defaults
-                }
-            }, 60000);
+                // 60-Second Auto-Lock if they don't type anything
+                if (taskPromptTimeout) clearTimeout(taskPromptTimeout);
+                taskPromptTimeout = setTimeout(() => {
+                    if (isAwaitingTask) {
+                        lockInNewTask(taskInput.value.trim()); 
+                    }
+                }, 60000);
+            } else {
+                // If returning from break, instantly restore the text UI!
+                taskInput.style.display = "none";
+                taskDisplayWrapper.style.display = "flex";
+                editTaskBtn.style.display = "block"; 
+                
+                mainDisplay.className = "main-display text-work text-task";
+                mainDisplay.innerText = activeTaskText;
+                isAwaitingTask = false;
+            }
             
             modeLabel.innerText = sessionGoalText;
             modeLabel.className = "mode-label text-work";
