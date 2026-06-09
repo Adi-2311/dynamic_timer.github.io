@@ -11,7 +11,8 @@
         :root {
             --bg-dark: #030305;
             --glass-bg: rgba(255, 255, 255, 0.02);
-            --glass-border: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.06);
+            --glass-hover: rgba(255, 255, 255, 0.04);
             --text-main: #FFFFFF;
             --text-muted: #6B6B70;
             --accent-blue: #0A84FF;
@@ -25,19 +26,20 @@
             color: var(--text-main);
             font-family: 'Inter', -apple-system, sans-serif;
             margin: 0;
-            padding: 60px 20px;
+            padding: 60px 20px 100px 20px;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            align-items: center;
             -webkit-font-smoothing: antialiased;
             overflow-x: hidden;
         }
 
-        /* Fixed Ambient Glow for scrolling pages */
+        /* Fixed Ambient Glow */
         .ambient-light {
             position: fixed;
             width: 800px;
             height: 800px;
-            background: radial-gradient(circle, rgba(10, 132, 255, 0.08) 0%, transparent 60%);
+            background: radial-gradient(circle, rgba(10, 132, 255, 0.06) 0%, transparent 60%);
             border-radius: 50%;
             top: -10%;
             left: 50%;
@@ -46,51 +48,25 @@
             pointer-events: none;
         }
 
-        /* Frosted Glass Container */
-        .container {
+        .dashboard-wrapper {
             width: 100%;
-            max-width: 900px;
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 40px;
-            padding: 50px 60px;
-            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(40px);
-            -webkit-backdrop-filter: blur(40px);
+            max-width: 1000px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
         }
 
-        /* Typography */
+        /* Header Area */
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 60px;
+            margin-bottom: 20px;
+            animation: slideUpFade 0.6s ease forwards;
         }
 
-        h1 { margin: 0; font-size: 36px; font-weight: 200; letter-spacing: -1px; }
+        h1 { margin: 0; font-size: 42px; font-weight: 200; letter-spacing: -2px; }
         
-        h2 { 
-            font-size: 12px; 
-            font-weight: 500; 
-            letter-spacing: 4px; 
-            text-transform: uppercase; 
-            color: var(--text-muted); 
-            margin-top: 60px; 
-            margin-bottom: 20px; 
-            border-bottom: 1px solid var(--glass-border); 
-            padding-bottom: 15px;
-        }
-
-        h3 { 
-            font-size: 16px; 
-            font-weight: 400; 
-            color: var(--text-main); 
-            margin-top: 30px; 
-            margin-bottom: 15px; 
-            letter-spacing: 0.5px;
-        }
-
-        /* Premium Buttons */
         .btn-back {
             background-color: transparent;
             color: var(--text-main);
@@ -104,130 +80,132 @@
             transition: all 0.3s ease;
             letter-spacing: 0.5px;
         }
-        .btn-back:hover { background-color: rgba(255, 255, 255, 0.05); transform: translateY(-2px); }
+        .btn-back:hover { background-color: var(--glass-hover); transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.5);}
 
-        .btn-danger {
-            background-color: transparent;
-            color: rgba(255, 69, 58, 0.6);
-            border: 1px solid rgba(255, 69, 58, 0.2);
-            padding: 12px 30px;
-            border-radius: 12px;
-            font-weight: 500;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-        .btn-danger:hover {
-            color: var(--accent-red);
-            border-color: rgba(255, 69, 58, 0.6);
-            background-color: rgba(255, 69, 58, 0.05);
-            box-shadow: 0 0 20px rgba(255, 69, 58, 0.2);
-        }
-
-        /* Productivity Log Cards */
-        .prod-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-        .prod-card {
-            background: rgba(255, 255, 255, 0.015);
+        /* Modular Glass Cards */
+        .glass-card {
+            background: var(--glass-bg);
             border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 25px;
-            transition: background 0.3s ease, border 0.3s ease;
+            border-radius: 40px;
+            padding: 40px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            opacity: 0; /* For animation */
+            animation: slideUpFade 0.6s ease forwards;
         }
-        .prod-card:hover {
-            background: rgba(255, 255, 255, 0.03);
-            border-color: rgba(10, 132, 255, 0.3);
-        }
-        .prod-time {
+
+        .card-header {
             font-size: 12px;
-            color: var(--accent-blue);
             font-weight: 600;
+            letter-spacing: 3px;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
-        }
-        .prod-text {
-            font-size: 16px;
-            font-weight: 300;
-            line-height: 1.6;
-            color: var(--text-main);
-            font-style: italic;
-        }
-        .prod-text::before { content: '"'; color: var(--text-muted); }
-        .prod-text::after { content: '"'; color: var(--text-muted); }
-
-        /* Minimalist Tables */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 30px;
-        }
-
-        th, td { padding: 18px 20px; text-align: left; }
-
-        th { 
-            color: var(--text-muted); 
-            font-weight: 500; 
-            text-transform: uppercase; 
-            font-size: 11px; 
-            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 20px;
             border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 15px;
         }
 
-        td {
-            font-size: 14px;
-            font-weight: 300;
-            border-bottom: 1px solid rgba(255,255,255,0.02);
-            transition: background 0.2s;
+        /* Grid Layouts */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+        
+        .split-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        /* Hero Metrics inside Cards */
+        .hero-metric {
+            font-size: 56px;
+            font-weight: 200;
+            letter-spacing: -3px;
+            margin: 10px 0 20px 0;
+            color: var(--accent-blue);
+            text-shadow: 0 0 30px rgba(10, 132, 255, 0.3);
+            line-height: 1;
             font-variant-numeric: tabular-nums;
         }
 
+        .sub-metrics {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+        .sub-val { color: var(--text-main); font-weight: 500;}
+
+        /* Productivity Log Items */
+        .prod-item {
+            padding: 20px;
+            background: rgba(255,255,255,0.015);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+        .prod-item:last-child { margin-bottom: 0; }
+        .prod-item:hover { border-color: rgba(10, 132, 255, 0.3); background: rgba(255,255,255,0.03);}
+        .prod-time { font-size: 11px; color: var(--accent-blue); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; margin-bottom: 8px;}
+        .prod-desc { font-size: 15px; font-weight: 300; line-height: 1.5; color: var(--text-main); font-style: italic;}
+
+        /* Elegant Tables */
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 16px 10px; text-align: left; }
+        th { 
+            color: var(--text-muted); font-weight: 500; text-transform: uppercase; 
+            font-size: 11px; letter-spacing: 1px; border-bottom: 1px solid var(--glass-border);
+        }
+        td {
+            font-size: 14px; font-weight: 300;
+            border-bottom: 1px solid rgba(255,255,255,0.02);
+            font-variant-numeric: tabular-nums;
+        }
         tbody tr:hover td { background-color: rgba(255, 255, 255, 0.015); }
         tr:last-child td { border-bottom: none; }
-        
-        /* Glowing Badges & Tags */
-        .badge-work { color: var(--accent-blue); font-weight: 500; text-shadow: 0 0 15px rgba(10, 132, 255, 0.4); }
-        .badge-break { color: var(--accent-orange); font-weight: 500; text-shadow: 0 0 15px rgba(255, 159, 10, 0.4); }
-        .rank-badge { font-weight: 600; color: var(--gold); text-shadow: 0 0 15px rgba(255, 214, 10, 0.3);} 
-        
-        .empty-state { text-align: center; padding: 50px; color: var(--text-muted); font-weight: 300; font-style: italic; font-size: 14px;}
 
-        /* Sleek Hierarchy Styling for History Table */
+        /* Status & Styling Tags */
+        .rank-badge { font-weight: 600; color: var(--gold); text-shadow: 0 0 15px rgba(255, 214, 10, 0.3);} 
+        .empty-state { text-align: center; padding: 40px; color: var(--text-muted); font-weight: 300; font-style: italic; font-size: 14px;}
+        
         .session-row td { 
             background-color: rgba(255, 255, 255, 0.02); 
             border-top: 1px solid var(--glass-border); 
-            font-weight: 500; 
-            padding: 15px 20px;
-            color: #E0E0E0;
+            font-weight: 500; padding: 20px 10px; color: #FFF;
         }
-        .block-row td:first-child { 
-            padding-left: 45px; 
-            color: var(--text-muted); 
-            font-size: 13px; 
-        }
+        .block-row td:first-child { padding-left: 30px; color: var(--text-muted); font-size: 12px; }
+        .text-work { color: var(--accent-blue); font-weight: 500; }
+        .text-rest { color: var(--accent-orange); font-weight: 500; }
         .status-tag { 
-            font-size: 11px; 
-            color: var(--text-muted); 
-            font-weight: 400; 
-            margin-left: 8px; 
-            text-transform: uppercase; 
-            letter-spacing: 1px;
-            padding: 3px 8px;
-            border-radius: 6px;
-            background: rgba(255,255,255,0.05);
+            font-size: 10px; color: var(--text-muted); font-weight: 500; margin-left: 8px; 
+            text-transform: uppercase; letter-spacing: 1px; padding: 3px 8px; border-radius: 8px; background: rgba(255,255,255,0.05);
         }
 
-        /* Responsive Tweaks */
-        @media (max-width: 768px) {
-            .container { padding: 30px 20px; border-radius: 32px; }
-            h1 { font-size: 28px; }
-            th, td { padding: 15px 10px; font-size: 13px; }
+        /* Danger Button */
+        .btn-danger {
+            background-color: transparent; color: rgba(255, 69, 58, 0.6); border: 1px solid rgba(255, 69, 58, 0.2);
+            padding: 15px 35px; border-radius: 99px; font-weight: 500; font-size: 12px; cursor: pointer;
+            transition: all 0.3s ease; letter-spacing: 2px; text-transform: uppercase; margin-top: 20px;
+        }
+        .btn-danger:hover {
+            color: var(--text-main); border-color: var(--accent-red); background-color: var(--accent-red); box-shadow: 0 10px 30px rgba(255, 69, 58, 0.4); transform: translateY(-2px);
+        }
+
+        /* Animation Keyframes */
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .metrics-grid, .split-grid { grid-template-columns: 1fr; }
+            .glass-card { padding: 30px; border-radius: 32px; }
         }
     </style>
 </head>
@@ -235,193 +213,172 @@
 
     <div class="ambient-light"></div>
 
-    <div class="container">
+    <div class="dashboard-wrapper">
+        
         <div class="header">
             <h1>Activity Report</h1>
             <a href="index.html" class="btn-back">← Back to Timer</a>
         </div>
 
-        <h2>Performance Metrics</h2>
-        
-        <h3>All-Time</h3>
-        <table id="table-all-time">
-            <thead><tr><th>Type</th><th>Blocks</th><th>Mean Time</th><th>Median</th><th>Mode</th><th>Avg Rating</th></tr></thead>
-            <tbody></tbody>
-        </table>
-
-        <h3>Past 7 Days</h3>
-        <table id="table-past-7">
-            <thead><tr><th>Type</th><th>Blocks</th><th>Mean Time</th><th>Median</th><th>Mode</th><th>Avg Rating</th></tr></thead>
-            <tbody></tbody>
-        </table>
-
-        <h3>Today</h3>
-        <table id="table-today">
-            <thead><tr><th>Type</th><th>Blocks</th><th>Mean Time</th><th>Median</th><th>Mode</th><th>Avg Rating</th></tr></thead>
-            <tbody></tbody>
-        </table>
-
-        <h2>🏆 Top 5 Deep Focus Blocks</h2>
-        <table id="table-leaderboard">
-            <thead><tr><th>Rank</th><th>Task Prompt</th><th>Duration</th><th>Date Earned</th></tr></thead>
-            <tbody></tbody>
-        </table>
-
-        <h2>Productivity Log</h2>
-        <div id="productivity-log-container" class="prod-grid">
+        <div class="metrics-grid">
+            <div class="glass-card" style="animation-delay: 0.1s;">
+                <div class="card-header">Today</div>
+                <div class="hero-metric" id="hero-today">0h 0m</div>
+                <div class="sub-metrics">
+                    <span>Blocks: <span class="sub-val" id="blocks-today">0</span></span>
+                    <span>Avg Rate: <span class="sub-val" id="rate-today">--</span></span>
+                </div>
             </div>
 
-        <h2>Detailed Session Log</h2>
-        <table id="table-history">
-            <thead><tr><th>Date & Time</th><th>Task / Status</th><th>Duration</th><th>Block Rating</th></tr></thead>
-            <tbody></tbody>
-        </table>
+            <div class="glass-card" style="animation-delay: 0.2s;">
+                <div class="card-header">Past 7 Days</div>
+                <div class="hero-metric" id="hero-week">0h 0m</div>
+                <div class="sub-metrics">
+                    <span>Blocks: <span class="sub-val" id="blocks-week">0</span></span>
+                    <span>Avg Rate: <span class="sub-val" id="rate-week">--</span></span>
+                </div>
+            </div>
 
-        <div style="text-align: center; margin-top: 80px; padding-top: 40px; border-top: 1px solid var(--glass-border);">
+            <div class="glass-card" style="animation-delay: 0.3s;">
+                <div class="card-header">All-Time</div>
+                <div class="hero-metric" id="hero-all">0h 0m</div>
+                <div class="sub-metrics">
+                    <span>Blocks: <span class="sub-val" id="blocks-all">0</span></span>
+                    <span>Avg Rate: <span class="sub-val" id="rate-all">--</span></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="split-grid">
+            <div class="glass-card" style="animation-delay: 0.4s;">
+                <div class="card-header">Top 5 Deep Focus Blocks</div>
+                <table id="table-leaderboard">
+                    <thead><tr><th>Rank</th><th>Task</th><th>Time</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div class="glass-card" style="animation-delay: 0.5s;">
+                <div class="card-header">Recent Wins</div>
+                <div id="productivity-log-container">
+                    </div>
+            </div>
+        </div>
+
+        <div class="glass-card" style="animation-delay: 0.6s;">
+            <div class="card-header">Detailed Session Log</div>
+            <div style="overflow-x: auto;">
+                <table id="table-history">
+                    <thead><tr><th>Date & Time</th><th>Task / Status</th><th>Duration</th><th>Rating</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div style="text-align: center; animation: slideUpFade 0.6s ease forwards; animation-delay: 0.7s;">
             <button class="btn-danger" onclick="wipeAllData()">Wipe All Data</button>
         </div>
+
     </div>
 
     <script>
         // --- Data Fetching & Memory Cleanup ---
         let sessions = JSON.parse(localStorage.getItem('studySessions')) || [];
         
-        // Memory Optimization: Only keep `tangibleResults` for the 3 most recent sessions that have them.
         function optimizeStorageData() {
             let storageUpdated = false;
-            
-            // Extract only sessions that actually have a user-typed result
             let sessionsWithResults = sessions.filter(s => s.tangibleResults && s.tangibleResults !== "No specific results recorded.");
             
-            // If there are more than 3, we need to delete the text data from the older ones to save space
             if (sessionsWithResults.length > 3) {
-                // Sort by newest first
                 sessionsWithResults.sort((a, b) => b.startTime - a.startTime);
-                
-                // Delete text property from the 4th item onwards
                 for (let i = 3; i < sessionsWithResults.length; i++) {
                     delete sessionsWithResults[i].tangibleResults;
                     storageUpdated = true;
                 }
             }
-            
-            // If we deleted old strings, push the cleaned array back to the browser storage
-            if (storageUpdated) {
-                localStorage.setItem('studySessions', JSON.stringify(sessions));
-            }
+            if (storageUpdated) localStorage.setItem('studySessions', JSON.stringify(sessions));
         }
         optimizeStorageData();
 
         // --- Formatting Helpers ---
-        function formatTime(totalSeconds) {
+        function formatHeroTime(totalSeconds) {
+            if (isNaN(totalSeconds) || totalSeconds === 0) return "0h 0m";
+            const h = Math.floor(totalSeconds / 3600);
+            const m = Math.floor((totalSeconds % 3600) / 60);
+            if (h > 0) return `${h}h ${m}m`;
+            return `${m}m`;
+        }
+
+        function formatTableTime(totalSeconds) {
             if (isNaN(totalSeconds) || totalSeconds === 0) return "---";
             const h = Math.floor(totalSeconds / 3600);
             const m = Math.floor((totalSeconds % 3600) / 60);
             const s = Math.floor(totalSeconds % 60);
-            if (h > 0) return `${h}h ${m}m`; // Simplified for cleaner display
+            if (h > 0) return `${h}h ${m}m`;
             return `${m}m ${s}s`;
         }
 
-        // --- Math Statistics Functions ---
-        function getMean(arr) {
-            if (!arr.length) return 0;
-            return arr.reduce((a, b) => a + b, 0) / arr.length;
-        }
+        function getMean(arr) { return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0; }
 
-        function getMedian(arr) {
-            if (!arr.length) return 0;
-            const sorted = [...arr].sort((a, b) => a - b);
-            const mid = Math.floor(sorted.length / 2);
-            return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
-        }
-
-        function getMode(arr) {
-            if (!arr.length) return 0;
-            const freq = {};
-            let maxFreq = 0;
-            let mode = arr[0];
-            for (const val of arr) {
-                freq[val] = (freq[val] || 0) + 1;
-                if (freq[val] > maxFreq) { maxFreq = freq[val]; mode = val; }
-            }
-            return mode;
-        }
-
-        function processGroup(blocks) {
-            const durations = blocks.map(b => b.durationSec);
-            const ratings = blocks.filter(b => b.rating != null).map(b => b.rating);
-            
-            return {
-                count: durations.length,
-                mean: getMean(durations),
-                median: getMedian(durations),
-                mode: getMode(durations),
-                avgRating: ratings.length ? getMean(ratings).toFixed(1) + "/10" : "---"
-            };
-        }
-
-        // --- Flatten Data & Time Filtering ---
+        // --- Data Parsing for Hero Cards ---
         const now = new Date();
-        const allFocus = []; const allBreak = [];
-        const weekFocus = []; const weekBreak = [];
-        const dayFocus = []; const dayBreak = [];
+        const stats = {
+            today: { time: 0, blocks: 0, ratings: [] },
+            week: { time: 0, blocks: 0, ratings: [] },
+            all: { time: 0, blocks: 0, ratings: [] }
+        };
+
+        const allFocusBlocks = []; // For leaderboard
 
         sessions.forEach(session => {
             if (!session.blocks) return;
 
             session.blocks.forEach(block => {
-                if (!block.durationSec || block.durationSec <= 0) return;
+                if (!block.durationSec || block.durationSec <= 0 || block.type !== "FOCUS") return;
 
                 const blockDate = new Date(block.startTime);
                 const daysOld = (now - blockDate) / (1000 * 60 * 60 * 24);
                 const isToday = blockDate.toDateString() === now.toDateString();
                 
-                if (block.type === "FOCUS") {
-                    allFocus.push(block);
-                    if (daysOld <= 7) weekFocus.push(block);
-                    if (isToday) dayFocus.push(block);
-                } else if (block.type === "BREAK") {
-                    allBreak.push(block);
-                    if (daysOld <= 7) weekBreak.push(block);
-                    if (isToday) dayBreak.push(block);
+                allFocusBlocks.push(block);
+
+                // All-Time
+                stats.all.time += block.durationSec;
+                stats.all.blocks += 1;
+                if (block.rating != null) stats.all.ratings.push(block.rating);
+
+                // Week
+                if (daysOld <= 7) {
+                    stats.week.time += block.durationSec;
+                    stats.week.blocks += 1;
+                    if (block.rating != null) stats.week.ratings.push(block.rating);
+                }
+
+                // Today
+                if (isToday) {
+                    stats.today.time += block.durationSec;
+                    stats.today.blocks += 1;
+                    if (block.rating != null) stats.today.ratings.push(block.rating);
                 }
             });
         });
 
-        // --- DOM Rendering Helper ---
-        function renderStatRow(tbodyId, type, stats) {
-            const tbody = document.querySelector(`#${tbodyId} tbody`);
-            const row = document.createElement("tr");
-            const typeClass = type === "FOCUS" ? "badge-work" : "badge-break";
-            
-            if (stats.count === 0) {
-                row.innerHTML = `<td class="${typeClass}">${type}</td><td>0</td><td>---</td><td>---</td><td>---</td><td>---</td>`;
-            } else {
-                row.innerHTML = `
-                    <td class="${typeClass}">${type}</td>
-                    <td>${stats.count}</td>
-                    <td>${formatTime(stats.mean)}</td>
-                    <td>${formatTime(stats.median)}</td>
-                    <td>${formatTime(stats.mode)}</td>
-                    <td>${stats.avgRating}</td>
-                `;
-            }
-            tbody.appendChild(row);
-        }
+        // --- Populate Hero Cards ---
+        document.getElementById('hero-today').innerText = formatHeroTime(stats.today.time);
+        document.getElementById('blocks-today').innerText = stats.today.blocks;
+        document.getElementById('rate-today').innerText = stats.today.ratings.length ? getMean(stats.today.ratings).toFixed(1) : "--";
 
-        // --- Render Stats Tables ---
-        renderStatRow("table-all-time", "FOCUS", processGroup(allFocus));
-        renderStatRow("table-all-time", "BREAK", processGroup(allBreak));
-        
-        renderStatRow("table-past-7", "FOCUS", processGroup(weekFocus));
-        renderStatRow("table-past-7", "BREAK", processGroup(weekBreak));
-        
-        renderStatRow("table-today", "FOCUS", processGroup(dayFocus));
-        renderStatRow("table-today", "BREAK", processGroup(dayBreak));
+        document.getElementById('hero-week').innerText = formatHeroTime(stats.week.time);
+        document.getElementById('blocks-week').innerText = stats.week.blocks;
+        document.getElementById('rate-week').innerText = stats.week.ratings.length ? getMean(stats.week.ratings).toFixed(1) : "--";
 
-        // --- Render Leaderboard ---
+        document.getElementById('hero-all').innerText = formatHeroTime(stats.all.time);
+        document.getElementById('blocks-all').innerText = stats.all.blocks;
+        document.getElementById('rate-all').innerText = stats.all.ratings.length ? getMean(stats.all.ratings).toFixed(1) : "--";
+
+        // --- Populate Leaderboard ---
         const leaderboardBody = document.querySelector("#table-leaderboard tbody");
-        const sortedFocus = [...allFocus].sort((a, b) => b.durationSec - a.durationSec);
+        const sortedFocus = [...allFocusBlocks].sort((a, b) => b.durationSec - a.durationSec);
         const ranks = ["1ST", "2ND", "3RD", "4TH", "5TH"];
         
         for (let i = 0; i < 5; i++) {
@@ -429,49 +386,44 @@
             if (i < sortedFocus.length) {
                 const b = sortedFocus[i];
                 const taskName = b.taskName ? b.taskName : "Deep Work";
-                const dateStr = new Date(b.startTime).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
-                row.innerHTML = `<td class="rank-badge">${ranks[i]}</td><td style="color:var(--text-main); font-weight:400;">${taskName}</td><td>${formatTime(b.durationSec)}</td><td>${dateStr}</td>`;
+                row.innerHTML = `<td class="rank-badge">${ranks[i]}</td><td style="color:var(--text-main); font-weight:400;">${taskName}</td><td>${formatTableTime(b.durationSec)}</td>`;
             } else {
-                row.innerHTML = `<td><span style="color:var(--text-muted); font-weight:300;">${ranks[i]}</span></td><td>---</td><td>---</td><td>---</td>`;
+                row.innerHTML = `<td><span style="color:var(--text-muted); font-weight:300;">${ranks[i]}</span></td><td>---</td><td>---</td>`;
             }
             leaderboardBody.appendChild(row);
         }
 
-        // --- Render Productivity Log (Newest 3) ---
+        // --- Populate Productivity Log ---
         const prodLogContainer = document.getElementById("productivity-log-container");
         let validProdSessions = sessions.filter(s => s.tangibleResults && s.tangibleResults !== "No specific results recorded.");
-        validProdSessions.sort((a, b) => b.startTime - a.startTime); // Newest first
+        validProdSessions.sort((a, b) => b.startTime - a.startTime); 
         const top3Prod = validProdSessions.slice(0, 3);
 
         if (top3Prod.length === 0) {
-            prodLogContainer.innerHTML = `<div class="empty-state">No productivity debriefs logged yet. Finish a session to see your results here.</div>`;
+            prodLogContainer.innerHTML = `<div class="empty-state">No debriefs logged yet. Finish a session to see your results here.</div>`;
         } else {
             top3Prod.forEach(session => {
-                // Calculate total focus time for this specific session
                 let focusSeconds = 0;
                 if (session.blocks) {
-                    session.blocks.forEach(b => {
-                        if (b.type === "FOCUS" && b.durationSec) focusSeconds += b.durationSec;
-                    });
+                    session.blocks.forEach(b => { if (b.type === "FOCUS" && b.durationSec) focusSeconds += b.durationSec; });
                 }
-                
-                const timeStr = formatTime(focusSeconds);
-                const dateStr = new Date(session.startTime).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+                const timeStr = formatHeroTime(focusSeconds);
+                const dateStr = new Date(session.startTime).toLocaleDateString([], { month: 'short', day: 'numeric' });
 
-                const card = document.createElement('div');
-                card.className = "prod-card";
-                card.innerHTML = `
-                    <div class="prod-time">${timeStr} of Deep Focus • ${dateStr}</div>
-                    <div class="prod-text">${session.tangibleResults}</div>
+                const item = document.createElement('div');
+                item.className = "prod-item";
+                item.innerHTML = `
+                    <div class="prod-time">${timeStr} Focus • ${dateStr}</div>
+                    <div class="prod-desc">"${session.tangibleResults}"</div>
                 `;
-                prodLogContainer.appendChild(card);
+                prodLogContainer.appendChild(item);
             });
         }
 
-        // --- Render Hierarchical History Log ---
+        // --- Populate History Table ---
         const historyBody = document.querySelector("#table-history tbody");
         if (sessions.length === 0) {
-            historyBody.innerHTML = `<tr><td colspan="4" class="empty-state">No sessions recorded yet. Time to get to work!</td></tr>`;
+            historyBody.innerHTML = `<tr><td colspan="4" class="empty-state">No history recorded yet. Time to get to work!</td></tr>`;
         } else {
             const reversedSessions = [...sessions].reverse();
             reversedSessions.forEach(session => {
@@ -479,13 +431,16 @@
                 const sRow = document.createElement("tr");
                 sRow.className = "session-row";
                 const sessionStart = new Date(session.startTime).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
-                const totalDur = formatTime(session.totalDurationSec || 0);
+                const totalDur = formatTableTime(session.totalDurationSec || 0);
+                
+                let sessionGoalDisplay = session.sessionGoal ? `<span style="color:var(--text-muted); font-weight:400;"> • ${session.sessionGoal}</span>` : "";
+                let sessionRatingDisplay = session.overallRating !== undefined ? `<span style="color:var(--accent-blue);">★ ${session.overallRating}/10</span>` : "";
                 const sessionStatus = session.status !== "COMPLETED" ? `<span class="status-tag">${session.status}</span>` : "";
                 
                 sRow.innerHTML = `
-                    <td colspan="2" style="letter-spacing: 0.5px;">📁 Session • ${sessionStart} ${sessionStatus}</td>
+                    <td colspan="2" style="letter-spacing: 0.5px;">📁 ${sessionStart} ${sessionGoalDisplay} ${sessionStatus}</td>
                     <td>${totalDur} Total</td>
-                    <td></td>
+                    <td>${sessionRatingDisplay}</td>
                 `;
                 historyBody.appendChild(sRow);
 
@@ -493,9 +448,7 @@
                     session.blocks.forEach(block => {
                         const bRow = document.createElement("tr");
                         bRow.className = "block-row";
-                        const typeClass = block.type === "FOCUS" ? "badge-work" : "badge-break";
-                        
-                        // Use task name if it's a focus block, otherwise just say "BREAK"
+                        const typeClass = block.type === "FOCUS" ? "text-work" : "text-rest";
                         const displayName = block.type === "FOCUS" ? (block.taskName || "Deep Work") : "Break";
                         const rating = block.rating != null ? `${block.rating}/10` : "---";
                         const blockTime = new Date(block.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
@@ -504,7 +457,7 @@
                         bRow.innerHTML = `
                             <td>↳ ${blockTime}</td>
                             <td><span class="${typeClass}">${displayName}</span> ${blockStatus}</td>
-                            <td>${formatTime(block.durationSec || 0)}</td>
+                            <td>${formatTableTime(block.durationSec || 0)}</td>
                             <td>${rating}</td>
                         `;
                         historyBody.appendChild(bRow);
@@ -516,7 +469,6 @@
         // --- Wipe All Data Function ---
         function wipeAllData() {
             const userConfirmed = confirm("⚠️ Are you completely sure? This will permanently delete all of your session history, stats, and productivity logs. This action cannot be undone.");
-            
             if (userConfirmed) {
                 localStorage.removeItem('studySessions');
                 window.location.reload();
