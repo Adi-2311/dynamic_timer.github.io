@@ -70,10 +70,11 @@
         .target-label { color: var(--text-muted); font-size: 12px; font-weight: 500; height: 20px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 2px;}
         .mode-label { font-size: 14px; font-weight: 600; letter-spacing: 6px; color: var(--text-muted); margin-bottom: 20px; transition: color 0.4s ease;}
         
-        /* The main display area (handles both Time and Text) */
+        /* The main display area */
         .display-container {
             min-height: 140px;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             margin-bottom: 20px;
@@ -86,9 +87,9 @@
             letter-spacing: -4px;
             transition: all 0.4s ease;
             line-height: 1;
+            width: 100%;
         }
 
-        /* Dynamic Class applied when showing the task string instead of the timer */
         .text-task {
             font-size: 42px !important;
             font-weight: 300 !important;
@@ -96,6 +97,28 @@
             line-height: 1.2 !important;
             word-wrap: break-word;
             padding: 0 10px;
+        }
+
+        /* Next Task / Edit Button */
+        .edit-task-btn {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 15px;
+            cursor: pointer;
+            opacity: 0.4;
+            transition: all 0.3s ease;
+            padding: 6px 16px;
+            border-radius: 12px;
+            border: 1px solid transparent;
+        }
+        
+        .edit-task-btn:hover {
+            opacity: 1;
+            color: var(--text-main);
+            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.05);
         }
 
         /* The Task Input Field */
@@ -125,7 +148,7 @@
             font-size: 16px;
         }
         
-        /* Razor-thin Progress Bar */
+        /* Progress Bar (Pulse sped up to 0.5s to act as ticking seconds) */
         .progress-bg { background-color: rgba(255,255,255,0.05); height: 3px; border-radius: 3px; overflow: hidden; margin-bottom: 40px; }
         .progress-fill { height: 100%; width: 0%; background-color: var(--text-muted); transition: width 0.1s linear, background-color 0.4s ease, box-shadow 0.4s ease; }
         .indeterminate { animation: pulse 0.5s infinite alternate ease-in-out; }
@@ -158,7 +181,6 @@
         .modal { background: #0A0A0C; padding: 40px 30px; border-radius: 40px; width: 340px; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05);}
         .modal h3 { margin: 0 0 5px 0; font-size: 18px; font-weight: 500; color: var(--text-main); }
         
-        /* New Session Results Input */
         .result-input {
             width: 100%;
             background: rgba(255, 255, 255, 0.03);
@@ -210,8 +232,12 @@
         <div class="mode-label" id="modeLabel">READY</div>
         
         <div class="display-container">
-            <input type="text" id="taskInput" class="task-input" placeholder="What problem are we solving?" maxlength="40" autocomplete="off">
-            <div class="main-display" id="mainDisplay" style="display: none;">00:00</div>
+            <input type="text" id="taskInput" class="task-input" placeholder="What problem are we solving?" maxlength="40" autocomplete="off" onkeydown="handleEnterKey(event)">
+            
+            <div id="taskDisplayWrapper" style="display: none; width: 100%; flex-direction: column; align-items: center;">
+                <div class="main-display" id="mainDisplay">00:00</div>
+                <div id="editTaskBtn" class="edit-task-btn" onclick="openTaskEditor()">Next Task ↵</div>
+            </div>
         </div>
         
         <div class="progress-bg">
@@ -255,7 +281,6 @@
     </div>
 
     <script>
-        // --- State Variables ---
         let timerState = "IDLE"; 
         let currentStartTime = 0;
         let pendingWorkSec = 0;
@@ -270,6 +295,8 @@
         // UI Elements
         const modeLabel = document.getElementById("modeLabel");
         const mainDisplay = document.getElementById("mainDisplay");
+        const taskDisplayWrapper = document.getElementById("taskDisplayWrapper");
+        const editTaskBtn = document.getElementById("editTaskBtn");
         const taskInput = document.getElementById("taskInput");
         const targetLabel = document.getElementById("targetLabel");
         const progressBar = document.getElementById("progressBar");
@@ -279,7 +306,6 @@
         const ratioText = document.getElementById("ratioText");
         const ambientLight = document.getElementById("ambientLight");
 
-        // Audio
         const chime = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
 
         function updateRatioText() {
@@ -296,7 +322,6 @@
 
         function saveSessionToHistory() {
             if (!currentSession) return;
-            
             currentSession.endTime = Date.now();
             currentSession.totalDurationSec = parseFloat(((currentSession.endTime - currentSession.startTime) / 1000).toFixed(2));
             
@@ -308,10 +333,45 @@
             currentBlock = null;
         }
 
+        // Handles typing Enter directly into the text box
+        function handleEnterKey(event) {
+            if (event.key === "Enter") {
+                if (timerState === "IDLE" || timerState === "READY") {
+                    startWork(); // Start session if hit enter from fresh start
+                } else if (timerState === "WORK") {
+                    lockInNewTask(); // Lock in task if editing mid-session
+                }
+            }
+        }
+
+        // Swaps UI to let user type a new task mid-session
+        function openTaskEditor() {
+            taskDisplayWrapper.style.display = "none";
+            taskInput.style.display = "block";
+            taskInput.value = "";
+            taskInput.placeholder = "What is the next objective?";
+            taskInput.focus();
+        }
+
+        // Locks the task in and appends it to the block history silently
+        function lockInNewTask() {
+            const newTaskText = taskInput.value.trim() || "Deep Work";
+            activeTaskText = newTaskText;
+
+            // Dynamically chain the task names in the backend for the stats page!
+            if (currentBlock && !currentBlock.taskName.includes(newTaskText)) {
+                currentBlock.taskName += ` → ${newTaskText}`;
+            }
+
+            taskInput.style.display = "none";
+            taskDisplayWrapper.style.display = "flex";
+            mainDisplay.innerText = activeTaskText;
+            document.title = `🛠 ${activeTaskText}`; 
+        }
+
         function startWork() {
             if (timerState === "WORK") return;
 
-            // Grab the task before wiping the UI
             if (timerState === "IDLE" || timerState === "READY") {
                 activeTaskText = taskInput.value.trim() || "Deep Work";
             }
@@ -346,9 +406,11 @@
             timerState = "WORK";
             currentStartTime = now;
             
-            // UI Switch: Hide input, Show Task Text
+            // Show Task Display, Hide Input
             taskInput.style.display = "none";
-            mainDisplay.style.display = "block";
+            taskDisplayWrapper.style.display = "flex";
+            editTaskBtn.style.display = "block"; // Show the subtle edit button!
+
             mainDisplay.className = "main-display text-work text-task";
             mainDisplay.innerText = activeTaskText;
             
@@ -368,9 +430,7 @@
 
         function initiateRest() {
             if (timerState !== "WORK") return;
-
             pendingWorkSec = (Date.now() - currentStartTime) / 1000;
-            
             timerState = "RATING";
             stopClock();
             
@@ -386,7 +446,6 @@
         function submitRatingAndRest() {
             const rating = parseInt(document.getElementById("modalSlider").value);
             document.getElementById("ratingModal").style.display = "none";
-            
             const now = Date.now();
 
             if (currentBlock && currentBlock.type === "FOCUS") {
@@ -413,7 +472,10 @@
             currentStartTime = now;
             alertShown = false;
 
-            // UI Switch: Remove text styling, return to Chronometric Time
+            // Rest UI updates
+            taskInput.style.display = "none";
+            taskDisplayWrapper.style.display = "flex";
+            editTaskBtn.style.display = "none"; // Hide edit button on breaks
             mainDisplay.className = "main-display text-rest";
             mainDisplay.innerText = "00:00";
 
@@ -436,13 +498,11 @@
             
             stopClock();
             const now = Date.now();
-            
             document.getElementById("ratingModal").style.display = "none";
             
             if (currentBlock) {
                 currentBlock.endTime = now;
                 currentBlock.durationSec = parseFloat(((now - currentBlock.startTime) / 1000).toFixed(2));
-                
                 if (timerState === "WORK" || timerState === "RATING") {
                     currentBlock.status = "INTERRUPTED";
                 } else {
@@ -451,26 +511,23 @@
                 currentSession.blocks.push(currentBlock);
             }
 
-            // Clear the text box so it's fresh for the new session
             document.getElementById("sessionResultInput").value = "";
             document.getElementById("sessionRatingModal").style.display = "flex";
         }
 
         function submitSessionRating() {
-            // Grab the text the user wrote, or default to a placeholder if they left it blank
             const resultsText = document.getElementById("sessionResultInput").value.trim() || "No specific results recorded.";
             document.getElementById("sessionRatingModal").style.display = "none";
             
             currentSession.tangibleResults = resultsText;
             saveSessionToHistory();
 
-            // Full Reset UI
             timerState = "IDLE";
             activeTaskText = "";
             taskInput.value = "";
-            
-            mainDisplay.style.display = "none";
+            taskDisplayWrapper.style.display = "none";
             taskInput.style.display = "block";
+            taskInput.placeholder = "What problem are we solving?";
             
             modeLabel.innerText = "READY";
             modeLabel.className = "mode-label";
@@ -480,7 +537,6 @@
             
             progressBar.className = "progress-fill";
             progressBar.style.width = "0%";
-            
             startBtn.className = "btn-work";
             restBtn.className = "btn-rest";
         }
@@ -488,32 +544,27 @@
         window.addEventListener('beforeunload', () => {
             if (currentSession && timerState !== "IDLE") {
                 const now = Date.now();
-                
                 if (currentBlock) {
                     currentBlock.endTime = now;
                     currentBlock.durationSec = parseFloat(((now - currentBlock.startTime) / 1000).toFixed(2));
                     currentBlock.status = "ABANDONED";
                     currentSession.blocks.push(currentBlock);
                 }
-                
                 currentSession.status = "ABANDONED";
                 saveSessionToHistory();
             }
         });
 
-      function startClock() {
+        function startClock() {
             stopClock();
             clockInterval = setInterval(() => {
                 const elapsed = (Date.now() - currentStartTime) / 1000;
                 const formatted = formatTime(elapsed);
                 
-                // Hide the ticking timer in the tab title while working!
                 if (timerState === "WORK") {
-                    // Just shows the icon and your task text. No time!
-                    document.title = `🛠 ${activeTaskText}`; 
+                    document.title = `🛠 ${activeTaskText}`;
                 }
 
-                // If resting, show the ticking timer on the main screen AND tab title
                 if (timerState === "BREAK") {
                     mainDisplay.innerText = formatted;
                     document.title = `☕️ ${formatted} - Resting`;
