@@ -5,79 +5,108 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Focus & Rest Timer</title>
     <style>
-        /* Apple-Inspired Dark Mode Theme */
+        /* Import Premium Font */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        /* Premium OLED & Glassmorphism Theme */
         :root {
-            --bg-color: #1C1C1E;
-            --surface-color: #2C2C2E;
-            --hover-color: #3A3A3C;
-            --text-main: #FFFFFF;
-            --text-muted: #8E8E93;
-            --blue-accent: #0A84FF;
-            --orange-accent: #FF9F0A;
-            --red-accent: #FF453A;
+            --bg-color: #050505;
+            --surface-color: rgba(255, 255, 255, 0.03);
+            --surface-hover: rgba(255, 255, 255, 0.08);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-main: #F1F1F3;
+            --text-muted: #888888;
+            --accent-blue: #0A84FF;
+            --accent-orange: #FF9F0A;
+            --accent-red: #FF453A;
+            --glow-blue: rgba(10, 132, 255, 0.4);
         }
 
         body {
             background-color: var(--bg-color);
+            background-image: radial-gradient(circle at 50% -20%, rgba(10, 132, 255, 0.08) 0%, transparent 60%);
             color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
             user-select: none;
+            -webkit-font-smoothing: antialiased;
         }
 
+        /* Glass Pane Container */
         .app-container {
-            width: 380px;
+            width: 360px;
             text-align: center;
-            padding: 20px;
+            padding: 45px 35px;
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 32px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
         }
 
-        /* Typography */
-        .target-label { color: var(--text-muted); font-size: 14px; font-weight: 500; height: 20px; margin-bottom: 10px; }
-        .mode-label { font-size: 18px; font-weight: 700; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 5px; transition: color 0.3s;}
-        .time-label { font-size: 80px; font-weight: 700; margin: 0 0 20px 0; tabular-nums: normal; transition: color 0.3s;}
+        /* Refined Typography */
+        .target-label { color: var(--text-muted); font-size: 13px; font-weight: 600; height: 20px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;}
+        .mode-label { font-size: 13px; font-weight: 700; letter-spacing: 4px; color: var(--text-muted); margin-bottom: 15px; transition: color 0.4s ease, text-shadow 0.4s ease;}
         
-        /* Progress Bar */
-        .progress-bg { background-color: var(--surface-color); height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 30px; }
-        .progress-fill { height: 100%; width: 0%; background-color: var(--text-muted); transition: width 0.1s linear, background-color 0.3s; }
-        .indeterminate { animation: pulse 1.5s infinite alternate; }
-        @keyframes pulse { 0% { opacity: 0.4; } 100% { opacity: 1; } }
-
-        /* Slider */
-        .ratio-label { color: var(--text-muted); font-size: 15px; margin-bottom: 10px; }
-        input[type="range"] { -webkit-appearance: none; width: 80%; background: var(--surface-color); height: 6px; border-radius: 3px; outline: none; margin-bottom: 40px;}
-        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #FFF; cursor: pointer; }
-
-        /* Buttons */
-        .btn-row { display: flex; justify-content: space-between; gap: 15px; margin-bottom: 20px; }
-        button { border: none; border-radius: 25px; font-size: 16px; font-weight: 600; padding: 15px; cursor: pointer; width: 100%; transition: all 0.2s; font-family: inherit;}
+        .time-label { 
+            font-size: 84px; 
+            font-weight: 800; 
+            margin: 0 0 30px 0; 
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -3px;
+            transition: color 0.4s ease, text-shadow 0.4s ease;
+        }
         
-        .btn-work { background-color: var(--blue-accent); color: white; }
-        .btn-work:hover { background-color: #007AFF; }
-        
-        .btn-rest { background-color: var(--surface-color); color: white; }
-        .btn-rest:hover { background-color: var(--hover-color); }
-        
-        .btn-end { background-color: transparent; color: var(--red-accent); width: auto; margin: 0 auto; display: block; font-size: 15px;}
-        .btn-end:hover { background-color: var(--surface-color); }
+        /* Sleek Progress Bar */
+        .progress-bg { background-color: rgba(255,255,255,0.04); height: 6px; border-radius: 99px; overflow: hidden; margin-bottom: 40px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.02);}
+        .progress-fill { height: 100%; width: 0%; background-color: var(--text-muted); transition: width 0.1s linear, background-color 0.4s ease, box-shadow 0.4s ease; border-radius: 99px;}
+        .indeterminate { animation: pulse 2s infinite alternate ease-in-out; }
+        @keyframes pulse { 0% { opacity: 0.2; } 100% { opacity: 1; } }
 
-        /* Rating Modal */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(5px); }
-        .modal { background: var(--surface-color); padding: 30px; border-radius: 20px; width: 320px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .modal h3 { margin-top: 0; font-size: 18px; }
-        .rating-val { font-size: 40px; font-weight: bold; color: var(--blue-accent); margin: 10px 0; }
-        .modal-labels { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-top: -10px; margin-bottom: 25px; }
-        .btn-submit { background-color: var(--blue-accent); color: white; }
+        /* Custom Slider */
+        .ratio-label { color: var(--text-muted); font-size: 14px; font-weight: 500; margin-bottom: 12px; }
+        input[type="range"] { -webkit-appearance: none; width: 100%; background: rgba(255, 255, 255, 0.08); height: 4px; border-radius: 2px; outline: none; margin-bottom: 40px;}
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; border-radius: 50%; background: #FFF; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.4); transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1);}
+        input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); }
 
-        /* Color States */
-        .text-work { color: var(--blue-accent) !important; }
-        .text-rest { color: var(--orange-accent) !important; }
-        .text-end { color: var(--red-accent) !important; }
-        .bg-work { background-color: var(--blue-accent) !important; }
-        .bg-rest { background-color: var(--orange-accent) !important; }
+        /* Tactile Buttons */
+        .btn-row { display: flex; justify-content: space-between; gap: 15px; margin-bottom: 25px; }
+        button { border: none; border-radius: 99px; font-size: 15px; font-weight: 600; padding: 18px; cursor: pointer; width: 100%; transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1); font-family: inherit;}
+        
+        .btn-work { background-color: var(--accent-blue); color: white; box-shadow: 0 4px 20px var(--glow-blue); }
+        .btn-work:hover { background-color: #007AFF; transform: translateY(-2px); box-shadow: 0 8px 25px rgba(10, 132, 255, 0.6); }
+        
+        .btn-rest { background-color: rgba(255, 255, 255, 0.05); color: var(--text-main); border: 1px solid var(--border-color); }
+        .btn-rest:hover { background-color: rgba(255, 255, 255, 0.1); transform: translateY(-2px); }
+        
+        .btn-end { background-color: transparent; color: var(--accent-red); width: auto; margin: 0 auto; display: inline-block; font-size: 14px; padding: 10px 20px;}
+        .btn-end:hover { background-color: rgba(255, 69, 58, 0.1); }
+
+        .stats-link { color: var(--text-muted); text-decoration: none; font-size: 13px; font-weight: 500; display: inline-block; transition: color 0.2s; margin-top: 30px;}
+        .stats-link:hover { color: var(--text-main); }
+
+        /* Premium Modals */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); animation: fadeIn 0.3s ease; }
+        .modal { background: rgba(25, 25, 28, 0.85); padding: 40px 30px; border-radius: 32px; width: 320px; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1); border: 1px solid var(--border-color); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);}
+        .modal h3 { margin: 0 0 10px 0; font-size: 18px; font-weight: 600; color: var(--text-main); }
+        .rating-val { font-size: 56px; font-weight: 800; color: var(--text-main); margin: 10px 0 20px 0; letter-spacing: -2px; }
+        .modal-labels { display: flex; justify-content: space-between; font-size: 12px; font-weight: 500; color: var(--text-muted); margin-top: -10px; margin-bottom: 30px; }
+        .modal .btn-submit { background-color: var(--text-main); color: var(--bg-color); box-shadow: 0 4px 15px rgba(255,255,255,0.15);}
+        .modal .btn-submit:hover { background-color: #FFF; box-shadow: 0 8px 25px rgba(255,255,255,0.25); transform: translateY(-2px);}
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Dynamic Color States */
+        .text-work { color: var(--accent-blue) !important; text-shadow: 0 0 30px rgba(10, 132, 255, 0.4); }
+        .text-rest { color: var(--accent-orange) !important; text-shadow: 0 0 30px rgba(255, 159, 10, 0.4); }
+        .text-end { color: var(--accent-red) !important; text-shadow: 0 0 30px rgba(255, 69, 58, 0.4); }
+        .bg-work { background-color: var(--accent-blue) !important; box-shadow: 0 0 20px rgba(10, 132, 255, 0.5); }
+        .bg-rest { background-color: var(--accent-orange) !important; box-shadow: 0 0 20px rgba(255, 159, 10, 0.5); }
     </style>
 </head>
 <body>
@@ -100,8 +129,8 @@
         </div>
         <button class="btn-end" onclick="endSession()">End Session</button>
         
-        <div style="margin-top: 30px;">
-            <a href="stats.html" style="color: var(--text-muted); text-decoration: none; font-size: 13px; font-weight: 600;">📊 View Study Stats & History</a>
+        <div>
+            <a href="stats.html" class="stats-link">📊 View Study Stats & History</a>
         </div>
     </div> 
 
@@ -120,12 +149,12 @@
 
     <div class="modal-overlay" id="sessionRatingModal">
         <div class="modal">
-            <h3>How productive was this entire session?</h3>
+            <h3>How productive was this session?</h3>
             <div class="rating-val" id="sessionModalRatingVal">5</div>
             <input type="range" id="sessionModalSlider" min="0" max="10" value="5" oninput="updateSessionModalVal()">
             <div class="modal-labels">
                 <span>0 - Wasted Time</span>
-                <span>10 - Extremely Productive</span>
+                <span>10 - Perfect Flow</span>
             </div>
             <button class="btn-submit" onclick="submitSessionRating()">Save Session</button>
         </div>
@@ -133,14 +162,13 @@
 
     <script>
         // --- State Variables ---
-        let timerState = "IDLE"; // IDLE, WORK, RATING, BREAK
+        let timerState = "IDLE"; 
         let currentStartTime = 0;
         let pendingWorkSec = 0;
         let plannedBreakSec = 0;
         let clockInterval;
         let alertShown = false;
 
-        // --- NEW hierarchical data models ---
         let currentSession = null;
         let currentBlock = null;
 
@@ -169,25 +197,20 @@
             return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
         }
 
-        // --- Save Session Logic ---
         function saveSessionToHistory() {
             if (!currentSession) return;
             
-            // Calculate total session duration
             currentSession.endTime = Date.now();
             currentSession.totalDurationSec = parseFloat(((currentSession.endTime - currentSession.startTime) / 1000).toFixed(2));
             
-            // Fetch existing sessions, append, and save
             let sessions = JSON.parse(localStorage.getItem("studySessions")) || [];
             sessions.push(currentSession);
             localStorage.setItem("studySessions", JSON.stringify(sessions));
             
-            // Reset
             currentSession = null;
             currentBlock = null;
         }
 
-        // --- Core Logic ---
         function startWork() {
             if (timerState === "WORK") return;
 
@@ -300,14 +323,12 @@
             startClock();
         }
 
-        // Changed: Now opens the overall session rating modal instead of closing directly
         function endSession() {
             if (timerState === "IDLE") return;
             
             stopClock();
             const now = Date.now();
             
-            // Hide the block rating modal just in case the user clicked End while rating a block
             document.getElementById("ratingModal").style.display = "none";
             
             if (currentBlock) {
@@ -322,24 +343,18 @@
                 currentSession.blocks.push(currentBlock);
             }
 
-            // Show Session Rating Modal
             document.getElementById("sessionModalSlider").value = 5;
             document.getElementById("sessionModalRatingVal").innerText = "5";
             document.getElementById("sessionRatingModal").style.display = "flex";
         }
 
-        // NEW: Finalizes the session and saves to history
         function submitSessionRating() {
             const sessionRating = parseInt(document.getElementById("sessionModalSlider").value);
             document.getElementById("sessionRatingModal").style.display = "none";
             
-            // Attach the overall rating to the session object
             currentSession.overallRating = sessionRating;
-
-            // Save parent focus session
             saveSessionToHistory();
 
-            // Reset UI
             timerState = "IDLE";
             modeLabel.innerText = "READY";
             modeLabel.className = "mode-label";
@@ -353,11 +368,8 @@
             
             startBtn.className = "btn-work";
             restBtn.className = "btn-rest";
-
-            alert("Session successfully logged and saved!");
         }
 
-        // --- Auto-Close if User Disappears ---
         window.addEventListener('beforeunload', () => {
             if (currentSession && timerState !== "IDLE") {
                 const now = Date.now();
@@ -370,12 +382,10 @@
                 }
                 
                 currentSession.status = "ABANDONED";
-                // Note: We intentionally do NOT set an overallRating here, so it remains blank.
                 saveSessionToHistory();
             }
         });
 
-        // --- Timer Loop ---
         function startClock() {
             stopClock();
             clockInterval = setInterval(() => {
