@@ -155,10 +155,39 @@
 
         /* Premium Modals */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); animation: fadeIn 0.4s ease; }
-        .modal { background: #0A0A0C; padding: 40px 30px; border-radius: 40px; width: 320px; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05);}
-        .modal h3 { margin: 0 0 5px 0; font-size: 16px; font-weight: 500; color: var(--text-main); }
+        .modal { background: #0A0A0C; padding: 40px 30px; border-radius: 40px; width: 340px; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05);}
+        .modal h3 { margin: 0 0 5px 0; font-size: 18px; font-weight: 500; color: var(--text-main); }
+        
+        /* New Session Results Input */
+        .result-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            color: var(--text-main);
+            font-size: 15px;
+            font-weight: 300;
+            font-family: inherit;
+            outline: none;
+            padding: 15px;
+            transition: all 0.3s;
+            margin-top: 20px;
+            margin-bottom: 30px;
+            resize: none;
+            box-sizing: border-box;
+            text-align: left;
+            line-height: 1.5;
+        }
+        .result-input:focus {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 20px rgba(10, 132, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .result-input::placeholder { color: rgba(107, 107, 112, 0.5); }
+
         .rating-val { font-size: 64px; font-weight: 200; color: var(--text-main); margin: 10px 0 20px 0; letter-spacing: -3px; }
         .modal-labels { display: flex; justify-content: space-between; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-top: -10px; margin-bottom: 30px; text-transform: uppercase; letter-spacing: 1px;}
+        
         .modal .btn-submit { background-color: var(--text-main); color: var(--bg-dark); font-weight: 600;}
         .modal .btn-submit:hover { background-color: #FFF; transform: translateY(-2px);}
 
@@ -218,13 +247,9 @@
 
     <div class="modal-overlay" id="sessionRatingModal">
         <div class="modal">
-            <h3>How productive was this session?</h3>
-            <div class="rating-val" id="sessionModalRatingVal">5</div>
-            <input type="range" id="sessionModalSlider" min="0" max="10" value="5" oninput="updateSessionModalVal()">
-            <div class="modal-labels">
-                <span>0 - Wasted</span>
-                <span>10 - Perfect</span>
-            </div>
+            <h3>Session Complete</h3>
+            <p style="color: var(--text-muted); font-size: 13px; margin: 5px 0 0 0;">What tangible results did you achieve?</p>
+            <textarea id="sessionResultInput" class="result-input" placeholder="e.g., Finished the backend API logic and drafted the final email..." rows="3"></textarea>
             <button class="btn-submit" onclick="submitSessionRating()">Save Session</button>
         </div>
     </div>
@@ -237,7 +262,7 @@
         let plannedBreakSec = 0;
         let clockInterval;
         let alertShown = false;
-        let activeTaskText = ""; // Holds the current task
+        let activeTaskText = ""; 
 
         let currentSession = null;
         let currentBlock = null;
@@ -313,7 +338,7 @@
             currentBlock = {
                 blockId: now,
                 type: "FOCUS",
-                taskName: activeTaskText, // Saving it to data silently
+                taskName: activeTaskText, 
                 startTime: now,
                 status: "ACTIVE"
             };
@@ -356,10 +381,6 @@
 
         function updateModalVal() {
             document.getElementById("modalRatingVal").innerText = document.getElementById("modalSlider").value;
-        }
-
-        function updateSessionModalVal() {
-            document.getElementById("sessionModalRatingVal").innerText = document.getElementById("sessionModalSlider").value;
         }
 
         function submitRatingAndRest() {
@@ -430,16 +451,17 @@
                 currentSession.blocks.push(currentBlock);
             }
 
-            document.getElementById("sessionModalSlider").value = 5;
-            document.getElementById("sessionModalRatingVal").innerText = "5";
+            // Clear the text box so it's fresh for the new session
+            document.getElementById("sessionResultInput").value = "";
             document.getElementById("sessionRatingModal").style.display = "flex";
         }
 
         function submitSessionRating() {
-            const sessionRating = parseInt(document.getElementById("sessionModalSlider").value);
+            // Grab the text the user wrote, or default to a placeholder if they left it blank
+            const resultsText = document.getElementById("sessionResultInput").value.trim() || "No specific results recorded.";
             document.getElementById("sessionRatingModal").style.display = "none";
             
-            currentSession.overallRating = sessionRating;
+            currentSession.tangibleResults = resultsText;
             saveSessionToHistory();
 
             // Full Reset UI
