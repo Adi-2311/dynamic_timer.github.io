@@ -5,128 +5,222 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Study Stats & Leaderboard</title>
     <style>
-        /* Apple-Inspired Dark Mode Theme */
+        /* Premium Typography */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&display=swap');
+
         :root {
-            --bg-color: #1C1C1E;
-            --surface-color: #2C2C2E;
-            --hover-color: #3A3A3C;
+            --bg-dark: #030305;
+            --glass-bg: rgba(255, 255, 255, 0.02);
+            --glass-border: rgba(255, 255, 255, 0.05);
             --text-main: #FFFFFF;
-            --text-muted: #8E8E93;
-            --blue-accent: #0A84FF;
-            --orange-accent: #FF9F0A;
-            --border-color: #38383A;
+            --text-muted: #6B6B70;
+            --accent-blue: #0A84FF;
+            --accent-orange: #FF9F0A;
+            --accent-red: #FF453A;
+            --gold: #FFD60A;
         }
 
         body {
-            background-color: var(--bg-color);
+            background-color: var(--bg-dark);
             color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-family: 'Inter', -apple-system, sans-serif;
             margin: 0;
-            padding: 40px 20px;
+            padding: 60px 20px;
             display: flex;
             justify-content: center;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
         }
 
+        /* Fixed Ambient Glow for scrolling pages */
+        .ambient-light {
+            position: fixed;
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(10, 132, 255, 0.08) 0%, transparent 60%);
+            border-radius: 50%;
+            top: -10%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Frosted Glass Container */
         .container {
             width: 100%;
-            max-width: 800px;
+            max-width: 900px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 40px;
+            padding: 50px 60px;
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
         }
 
+        /* Typography */
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 40px;
+            margin-bottom: 60px;
         }
 
-        h1 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: 0.5px; }
-        h2 { font-size: 18px; color: var(--text-muted); margin-top: 40px; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;}
-        h3 { font-size: 14px; color: var(--text-main); margin-top: 20px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px;}
+        h1 { margin: 0; font-size: 36px; font-weight: 200; letter-spacing: -1px; }
+        
+        h2 { 
+            font-size: 12px; 
+            font-weight: 500; 
+            letter-spacing: 4px; 
+            text-transform: uppercase; 
+            color: var(--text-muted); 
+            margin-top: 60px; 
+            margin-bottom: 20px; 
+            border-bottom: 1px solid var(--glass-border); 
+            padding-bottom: 15px;
+        }
 
+        h3 { 
+            font-size: 16px; 
+            font-weight: 400; 
+            color: var(--text-main); 
+            margin-top: 30px; 
+            margin-bottom: 15px; 
+            letter-spacing: 0.5px;
+        }
+
+        /* Premium Buttons */
         .btn-back {
-            background-color: var(--surface-color);
+            background-color: transparent;
             color: var(--text-main);
-            border: none;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-weight: 600;
+            border: 1px solid var(--glass-border);
+            padding: 12px 24px;
+            border-radius: 99px;
+            font-weight: 500;
+            font-size: 13px;
             cursor: pointer;
             text-decoration: none;
-            font-size: 14px;
-            transition: background 0.2s;
+            transition: all 0.3s ease;
+            letter-spacing: 0.5px;
         }
-        .btn-back:hover { background-color: var(--hover-color); }
+        
+        .btn-back:hover { 
+            background-color: rgba(255, 255, 255, 0.05); 
+            transform: translateY(-2px); 
+        }
 
-        /* Tables */
+        /* Minimalist Tables */
         table {
             width: 100%;
             border-collapse: collapse;
-            background-color: var(--surface-color);
-            border-radius: 12px;
-            overflow: hidden;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
         }
 
         th, td {
-            padding: 15px 20px;
+            padding: 18px 20px;
             text-align: left;
-            font-size: 14px;
-            border-bottom: 1px solid var(--border-color);
         }
 
-        th { color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px;}
+        th { 
+            color: var(--text-muted); 
+            font-weight: 500; 
+            text-transform: uppercase; 
+            font-size: 11px; 
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        td {
+            font-size: 14px;
+            font-weight: 300;
+            border-bottom: 1px solid rgba(255,255,255,0.02);
+            transition: background 0.2s;
+            font-variant-numeric: tabular-nums;
+        }
+
+        tbody tr:hover td { background-color: rgba(255, 255, 255, 0.015); }
         tr:last-child td { border-bottom: none; }
         
-        .badge-work { color: var(--blue-accent); font-weight: bold; }
-        .badge-break { color: var(--orange-accent); font-weight: bold; }
-        .rank-badge { font-weight: 800; color: #FFD60A; } /* Gold for Leaderboard */
+        /* Glowing Badges & Tags */
+        .badge-work { color: var(--accent-blue); font-weight: 500; text-shadow: 0 0 15px rgba(10, 132, 255, 0.4); }
+        .badge-break { color: var(--accent-orange); font-weight: 500; text-shadow: 0 0 15px rgba(255, 159, 10, 0.4); }
+        .rank-badge { font-weight: 600; color: var(--gold); text-shadow: 0 0 15px rgba(255, 214, 10, 0.3);} 
         
-        .empty-state { text-align: center; padding: 40px; color: var(--text-muted); font-style: italic; }
+        .empty-state { text-align: center; padding: 50px; color: var(--text-muted); font-weight: 300; font-style: italic; }
 
-        /* Hierarchy Styling for History Table */
-        .session-row { background-color: #242426; border-top: 3px solid var(--bg-color); }
-        .session-row td { font-weight: 600; padding: 12px 20px; }
-        .block-row td:first-child { padding-left: 40px; color: var(--text-muted); font-size: 12px; }
-        .status-tag { font-size: 11px; color: var(--text-muted); font-weight: normal; margin-left: 5px; text-transform: lowercase;}
+        /* Sleek Hierarchy Styling for History Table */
+        .session-row td { 
+            background-color: rgba(255, 255, 255, 0.02); 
+            border-top: 1px solid var(--glass-border); 
+            font-weight: 500; 
+            padding: 15px 20px;
+            color: #E0E0E0;
+        }
+        .block-row td:first-child { 
+            padding-left: 45px; 
+            color: var(--text-muted); 
+            font-size: 13px; 
+        }
+        .status-tag { 
+            font-size: 11px; 
+            color: var(--text-muted); 
+            font-weight: 400; 
+            margin-left: 8px; 
+            text-transform: uppercase; 
+            letter-spacing: 1px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.05);
+        }
+
+        /* Responsive Tweaks */
+        @media (max-width: 768px) {
+            .container { padding: 30px 20px; border-radius: 32px; }
+            h1 { font-size: 28px; }
+            th, td { padding: 15px 10px; font-size: 13px; }
+        }
     </style>
 </head>
 <body>
 
+    <div class="ambient-light"></div>
+
     <div class="container">
         <div class="header">
-            <h1>Focus & Rest Report</h1>
+            <h1>Activity Report</h1>
             <a href="index.html" class="btn-back">← Back to Timer</a>
         </div>
 
-        <h2>STUDY STATS</h2>
+        <h2>Performance Metrics</h2>
         
         <h3>All-Time</h3>
         <table id="table-all-time">
-            <thead><tr><th>Type</th><th>Count</th><th>Mean</th><th>Median</th><th>Mode</th><th>Avg Rating</th></tr></thead>
+            <thead><tr><th>Type</th><th>Blocks</th><th>Mean Time</th><th>Median</th><th>Mode</th><th>Avg Rating</th></tr></thead>
             <tbody></tbody>
         </table>
 
         <h3>Past 7 Days</h3>
         <table id="table-past-7">
-            <thead><tr><th>Type</th><th>Count</th><th>Mean</th><th>Median</th><th>Mode</th><th>Avg Rating</th></tr></thead>
+            <thead><tr><th>Type</th><th>Blocks</th><th>Mean Time</th><th>Median</th><th>Mode</th><th>Avg Rating</th></tr></thead>
             <tbody></tbody>
         </table>
 
         <h3>Today</h3>
         <table id="table-today">
-            <thead><tr><th>Type</th><th>Count</th><th>Mean</th><th>Median</th><th>Mode</th><th>Avg Rating</th></tr></thead>
+            <thead><tr><th>Type</th><th>Blocks</th><th>Mean Time</th><th>Median</th><th>Mode</th><th>Avg Rating</th></tr></thead>
             <tbody></tbody>
         </table>
 
-        <h2>🏆 HALL OF FAME: TOP 5 FOCUS BLOCKS</h2>
+        <h2>🏆 Top 5 Deep Focus Blocks</h2>
         <table id="table-leaderboard">
             <thead><tr><th>Rank</th><th>Duration</th><th>Rating</th><th>Date Earned</th></tr></thead>
             <tbody></tbody>
         </table>
 
-        <h2>SESSION HISTORY LOG</h2>
+        <h2>Detailed Session Log</h2>
         <table id="table-history">
-            <thead><tr><th>Date & Time</th><th>Type</th><th>Duration</th><th>Rating</th></tr></thead>
+            <thead><tr><th>Date & Time</th><th>Type / Status</th><th>Duration</th><th>Rating</th></tr></thead>
             <tbody></tbody>
         </table>
     </div>
@@ -251,10 +345,10 @@
             if (i < sortedFocus.length) {
                 const b = sortedFocus[i];
                 const rating = b.rating != null ? `${b.rating}/10` : "---";
-                const dateStr = new Date(b.startTime).toLocaleString();
+                const dateStr = new Date(b.startTime).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
                 row.innerHTML = `<td class="rank-badge">${ranks[i]}</td><td>${formatTime(b.durationSec)}</td><td>${rating}</td><td>${dateStr}</td>`;
             } else {
-                row.innerHTML = `<td>${ranks[i]}</td><td>---</td><td>---</td><td>---</td>`;
+                row.innerHTML = `<td><span style="color:var(--text-muted); font-weight:300;">${ranks[i]}</span></td><td>---</td><td>---</td><td>---</td>`;
             }
             leaderboardBody.appendChild(row);
         }
@@ -262,21 +356,28 @@
         // --- Render Hierarchical History Log ---
         const historyBody = document.querySelector("#table-history tbody");
         if (sessions.length === 0) {
-            historyBody.innerHTML = `<tr><td colspan="4" class="empty-state">No sessions recorded yet. Start focusing!</td></tr>`;
+            historyBody.innerHTML = `<tr><td colspan="4" class="empty-state">No sessions recorded yet. Time to get to work!</td></tr>`;
         } else {
             const reversedSessions = [...sessions].reverse();
             reversedSessions.forEach(session => {
                 
                 const sRow = document.createElement("tr");
                 sRow.className = "session-row";
-                const sessionStart = new Date(session.startTime).toLocaleString();
+                const sessionStart = new Date(session.startTime).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
                 const totalDur = formatTime(session.totalDurationSec || 0);
-                const sessionStatus = session.status !== "COMPLETED" ? `<span class="status-tag">(${session.status})</span>` : "";
+                
+                // Add overall session rating display
+                let sessionRatingDisplay = "";
+                if (session.overallRating !== undefined) {
+                    sessionRatingDisplay = `<span style="color:var(--accent-blue);">★ ${session.overallRating}/10</span>`;
+                }
+
+                const sessionStatus = session.status !== "COMPLETED" ? `<span class="status-tag">${session.status}</span>` : "";
                 
                 sRow.innerHTML = `
-                    <td colspan="2">📁 Session: ${sessionStart} ${sessionStatus}</td>
+                    <td colspan="2" style="letter-spacing: 0.5px;">📁 Session • ${sessionStart} ${sessionStatus}</td>
                     <td>${totalDur} Total</td>
-                    <td></td>
+                    <td>${sessionRatingDisplay}</td>
                 `;
                 historyBody.appendChild(sRow);
 
@@ -287,11 +388,11 @@
                         const typeClass = block.type === "FOCUS" ? "badge-work" : "badge-break";
                         const rating = block.rating != null ? `${block.rating}/10` : "---";
                         const blockTime = new Date(block.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                        const blockStatus = block.status !== "COMPLETED" ? `<span class="status-tag">(${block.status})</span>` : "";
+                        const blockStatus = block.status !== "COMPLETED" ? `<span class="status-tag">${block.status}</span>` : "";
 
                         bRow.innerHTML = `
                             <td>↳ ${blockTime}</td>
-                            <td class="${typeClass}">${block.type} ${blockStatus}</td>
+                            <td><span class="${typeClass}">${block.type}</span> ${blockStatus}</td>
                             <td>${formatTime(block.durationSec || 0)}</td>
                             <td>${rating}</td>
                         `;
