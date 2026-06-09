@@ -104,11 +104,63 @@
             transition: all 0.3s ease;
             letter-spacing: 0.5px;
         }
-        
-        .btn-back:hover { 
-            background-color: rgba(255, 255, 255, 0.05); 
-            transform: translateY(-2px); 
+        .btn-back:hover { background-color: rgba(255, 255, 255, 0.05); transform: translateY(-2px); }
+
+        .btn-danger {
+            background-color: transparent;
+            color: rgba(255, 69, 58, 0.6);
+            border: 1px solid rgba(255, 69, 58, 0.2);
+            padding: 12px 30px;
+            border-radius: 12px;
+            font-weight: 500;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
+        .btn-danger:hover {
+            color: var(--accent-red);
+            border-color: rgba(255, 69, 58, 0.6);
+            background-color: rgba(255, 69, 58, 0.05);
+            box-shadow: 0 0 20px rgba(255, 69, 58, 0.2);
+        }
+
+        /* Productivity Log Cards */
+        .prod-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .prod-card {
+            background: rgba(255, 255, 255, 0.015);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 25px;
+            transition: background 0.3s ease, border 0.3s ease;
+        }
+        .prod-card:hover {
+            background: rgba(255, 255, 255, 0.03);
+            border-color: rgba(10, 132, 255, 0.3);
+        }
+        .prod-time {
+            font-size: 12px;
+            color: var(--accent-blue);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+        .prod-text {
+            font-size: 16px;
+            font-weight: 300;
+            line-height: 1.6;
+            color: var(--text-main);
+            font-style: italic;
+        }
+        .prod-text::before { content: '"'; color: var(--text-muted); }
+        .prod-text::after { content: '"'; color: var(--text-muted); }
 
         /* Minimalist Tables */
         table {
@@ -117,10 +169,7 @@
             margin-bottom: 30px;
         }
 
-        th, td {
-            padding: 18px 20px;
-            text-align: left;
-        }
+        th, td { padding: 18px 20px; text-align: left; }
 
         th { 
             color: var(--text-muted); 
@@ -147,7 +196,7 @@
         .badge-break { color: var(--accent-orange); font-weight: 500; text-shadow: 0 0 15px rgba(255, 159, 10, 0.4); }
         .rank-badge { font-weight: 600; color: var(--gold); text-shadow: 0 0 15px rgba(255, 214, 10, 0.3);} 
         
-        .empty-state { text-align: center; padding: 50px; color: var(--text-muted); font-weight: 300; font-style: italic; }
+        .empty-state { text-align: center; padding: 50px; color: var(--text-muted); font-weight: 300; font-style: italic; font-size: 14px;}
 
         /* Sleek Hierarchy Styling for History Table */
         .session-row td { 
@@ -214,28 +263,63 @@
 
         <h2>🏆 Top 5 Deep Focus Blocks</h2>
         <table id="table-leaderboard">
-            <thead><tr><th>Rank</th><th>Duration</th><th>Rating</th><th>Date Earned</th></tr></thead>
+            <thead><tr><th>Rank</th><th>Task Prompt</th><th>Duration</th><th>Date Earned</th></tr></thead>
             <tbody></tbody>
         </table>
+
+        <h2>Productivity Log</h2>
+        <div id="productivity-log-container" class="prod-grid">
+            </div>
 
         <h2>Detailed Session Log</h2>
         <table id="table-history">
-            <thead><tr><th>Date & Time</th><th>Type / Status</th><th>Duration</th><th>Rating</th></tr></thead>
+            <thead><tr><th>Date & Time</th><th>Task / Status</th><th>Duration</th><th>Block Rating</th></tr></thead>
             <tbody></tbody>
         </table>
+
+        <div style="text-align: center; margin-top: 80px; padding-top: 40px; border-top: 1px solid var(--glass-border);">
+            <button class="btn-danger" onclick="wipeAllData()">Wipe All Data</button>
+        </div>
     </div>
 
     <script>
-        // --- Data Fetching ---
-        const sessions = JSON.parse(localStorage.getItem('studySessions')) || [];
+        // --- Data Fetching & Memory Cleanup ---
+        let sessions = JSON.parse(localStorage.getItem('studySessions')) || [];
         
+        // Memory Optimization: Only keep `tangibleResults` for the 3 most recent sessions that have them.
+        function optimizeStorageData() {
+            let storageUpdated = false;
+            
+            // Extract only sessions that actually have a user-typed result
+            let sessionsWithResults = sessions.filter(s => s.tangibleResults && s.tangibleResults !== "No specific results recorded.");
+            
+            // If there are more than 3, we need to delete the text data from the older ones to save space
+            if (sessionsWithResults.length > 3) {
+                // Sort by newest first
+                sessionsWithResults.sort((a, b) => b.startTime - a.startTime);
+                
+                // Delete text property from the 4th item onwards
+                for (let i = 3; i < sessionsWithResults.length; i++) {
+                    delete sessionsWithResults[i].tangibleResults;
+                    storageUpdated = true;
+                }
+            }
+            
+            // If we deleted old strings, push the cleaned array back to the browser storage
+            if (storageUpdated) {
+                localStorage.setItem('studySessions', JSON.stringify(sessions));
+            }
+        }
+        optimizeStorageData();
+
+        // --- Formatting Helpers ---
         function formatTime(totalSeconds) {
             if (isNaN(totalSeconds) || totalSeconds === 0) return "---";
             const h = Math.floor(totalSeconds / 3600);
             const m = Math.floor((totalSeconds % 3600) / 60);
             const s = Math.floor(totalSeconds % 60);
-            if (h > 0) return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            if (h > 0) return `${h}h ${m}m`; // Simplified for cleaner display
+            return `${m}m ${s}s`;
         }
 
         // --- Math Statistics Functions ---
@@ -344,13 +428,44 @@
             const row = document.createElement("tr");
             if (i < sortedFocus.length) {
                 const b = sortedFocus[i];
-                const rating = b.rating != null ? `${b.rating}/10` : "---";
+                const taskName = b.taskName ? b.taskName : "Deep Work";
                 const dateStr = new Date(b.startTime).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
-                row.innerHTML = `<td class="rank-badge">${ranks[i]}</td><td>${formatTime(b.durationSec)}</td><td>${rating}</td><td>${dateStr}</td>`;
+                row.innerHTML = `<td class="rank-badge">${ranks[i]}</td><td style="color:var(--text-main); font-weight:400;">${taskName}</td><td>${formatTime(b.durationSec)}</td><td>${dateStr}</td>`;
             } else {
                 row.innerHTML = `<td><span style="color:var(--text-muted); font-weight:300;">${ranks[i]}</span></td><td>---</td><td>---</td><td>---</td>`;
             }
             leaderboardBody.appendChild(row);
+        }
+
+        // --- Render Productivity Log (Newest 3) ---
+        const prodLogContainer = document.getElementById("productivity-log-container");
+        let validProdSessions = sessions.filter(s => s.tangibleResults && s.tangibleResults !== "No specific results recorded.");
+        validProdSessions.sort((a, b) => b.startTime - a.startTime); // Newest first
+        const top3Prod = validProdSessions.slice(0, 3);
+
+        if (top3Prod.length === 0) {
+            prodLogContainer.innerHTML = `<div class="empty-state">No productivity debriefs logged yet. Finish a session to see your results here.</div>`;
+        } else {
+            top3Prod.forEach(session => {
+                // Calculate total focus time for this specific session
+                let focusSeconds = 0;
+                if (session.blocks) {
+                    session.blocks.forEach(b => {
+                        if (b.type === "FOCUS" && b.durationSec) focusSeconds += b.durationSec;
+                    });
+                }
+                
+                const timeStr = formatTime(focusSeconds);
+                const dateStr = new Date(session.startTime).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+
+                const card = document.createElement('div');
+                card.className = "prod-card";
+                card.innerHTML = `
+                    <div class="prod-time">${timeStr} of Deep Focus • ${dateStr}</div>
+                    <div class="prod-text">${session.tangibleResults}</div>
+                `;
+                prodLogContainer.appendChild(card);
+            });
         }
 
         // --- Render Hierarchical History Log ---
@@ -365,19 +480,12 @@
                 sRow.className = "session-row";
                 const sessionStart = new Date(session.startTime).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
                 const totalDur = formatTime(session.totalDurationSec || 0);
-                
-                // Add overall session rating display
-                let sessionRatingDisplay = "";
-                if (session.overallRating !== undefined) {
-                    sessionRatingDisplay = `<span style="color:var(--accent-blue);">★ ${session.overallRating}/10</span>`;
-                }
-
                 const sessionStatus = session.status !== "COMPLETED" ? `<span class="status-tag">${session.status}</span>` : "";
                 
                 sRow.innerHTML = `
                     <td colspan="2" style="letter-spacing: 0.5px;">📁 Session • ${sessionStart} ${sessionStatus}</td>
                     <td>${totalDur} Total</td>
-                    <td>${sessionRatingDisplay}</td>
+                    <td></td>
                 `;
                 historyBody.appendChild(sRow);
 
@@ -386,13 +494,16 @@
                         const bRow = document.createElement("tr");
                         bRow.className = "block-row";
                         const typeClass = block.type === "FOCUS" ? "badge-work" : "badge-break";
+                        
+                        // Use task name if it's a focus block, otherwise just say "BREAK"
+                        const displayName = block.type === "FOCUS" ? (block.taskName || "Deep Work") : "Break";
                         const rating = block.rating != null ? `${block.rating}/10` : "---";
                         const blockTime = new Date(block.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                         const blockStatus = block.status !== "COMPLETED" ? `<span class="status-tag">${block.status}</span>` : "";
 
                         bRow.innerHTML = `
                             <td>↳ ${blockTime}</td>
-                            <td><span class="${typeClass}">${block.type}</span> ${blockStatus}</td>
+                            <td><span class="${typeClass}">${displayName}</span> ${blockStatus}</td>
                             <td>${formatTime(block.durationSec || 0)}</td>
                             <td>${rating}</td>
                         `;
@@ -400,6 +511,16 @@
                     });
                 }
             });
+        }
+
+        // --- Wipe All Data Function ---
+        function wipeAllData() {
+            const userConfirmed = confirm("⚠️ Are you completely sure? This will permanently delete all of your session history, stats, and productivity logs. This action cannot be undone.");
+            
+            if (userConfirmed) {
+                localStorage.removeItem('studySessions');
+                window.location.reload();
+            }
         }
     </script>
 </body>
