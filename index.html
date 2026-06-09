@@ -501,15 +501,16 @@
             }
         });
 
-        function startClock() {
+      function startClock() {
             stopClock();
             clockInterval = setInterval(() => {
                 const elapsed = (Date.now() - currentStartTime) / 1000;
                 const formatted = formatTime(elapsed);
                 
-                // Only show the ticking timer in the tab title while working
+                // Hide the ticking timer in the tab title while working!
                 if (timerState === "WORK") {
-                    document.title = `🛠 ${formatted} - ${activeTaskText}`;
+                    // Just shows the icon and your task text. No time!
+                    document.title = `🛠 ${activeTaskText}`; 
                 }
 
                 // If resting, show the ticking timer on the main screen AND tab title
