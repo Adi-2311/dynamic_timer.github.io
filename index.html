@@ -68,7 +68,17 @@
 
         /* Ultra-Sleek Typography */
         .target-label { color: var(--text-muted); font-size: 12px; font-weight: 500; height: 20px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 2px;}
-        .mode-label { font-size: 14px; font-weight: 600; letter-spacing: 6px; color: var(--text-muted); margin-bottom: 20px; transition: color 0.4s ease;}
+        
+        /* Added smooth transform transitions for the sliding label */
+        .mode-label { 
+            font-size: 13px; 
+            font-weight: 600; 
+            letter-spacing: 4px; 
+            color: var(--text-muted); 
+            margin-bottom: 20px; 
+            transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            text-transform: uppercase;
+        }
         
         /* The main display area */
         .display-container {
@@ -127,7 +137,7 @@
             background: transparent;
             border: none;
             color: var(--text-main);
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 300;
             text-align: center;
             font-family: inherit;
@@ -145,7 +155,7 @@
 
         .task-input::placeholder {
             color: rgba(107, 107, 112, 0.5);
-            font-size: 16px;
+            font-size: 15px;
         }
         
         /* Progress Bar (Pulse sped up to 0.5s to act as ticking seconds) */
@@ -232,7 +242,7 @@
         <div class="mode-label" id="modeLabel">READY</div>
         
         <div class="display-container">
-            <input type="text" id="taskInput" class="task-input" placeholder="What problem are we solving?" maxlength="40" autocomplete="off" onkeydown="handleEnterKey(event)">
+            <input type="text" id="taskInput" class="task-input" placeholder="What do you want to do today?" maxlength="40" autocomplete="off" onkeydown="handleEnterKey(event)">
             
             <div id="taskDisplayWrapper" style="display: none; width: 100%; flex-direction: column; align-items: center;">
                 <div class="main-display" id="mainDisplay">00:00</div>
@@ -248,7 +258,7 @@
         <input type="range" id="ratioSlider" min="1" max="35" value="20" oninput="updateRatioText()">
 
         <div class="btn-row">
-            <button class="btn-work" id="startBtn" onclick="startWork()">Start Focus</button>
+            <button class="btn-work" id="startBtn" onclick="handleFocusRequest()">Start Focus</button>
             <button class="btn-rest" id="restBtn" onclick="initiateRest()">Rest</button>
         </div>
         <button class="btn-end" onclick="endSession()">End Session</button>
@@ -281,13 +291,18 @@
     </div>
 
     <script>
+        // --- State Variables ---
         let timerState = "IDLE"; 
         let currentStartTime = 0;
         let pendingWorkSec = 0;
         let plannedBreakSec = 0;
         let clockInterval;
         let alertShown = false;
+        
+        let sessionGoalText = "";
         let activeTaskText = ""; 
+        let isAwaitingTask = false;
+        let taskPromptTimeout = null;
 
         let currentSession = null;
         let currentBlock = null;
@@ -333,60 +348,87 @@
             currentBlock = null;
         }
 
-        // Handles typing Enter directly into the text box
-        function handleEnterKey(event) {
-            if (event.key === "Enter") {
-                if (timerState === "IDLE" || timerState === "READY") {
-                    startWork(); // Start session if hit enter from fresh start
-                } else if (timerState === "WORK") {
-                    lockInNewTask(); // Lock in task if editing mid-session
-                }
+        // Central interaction handler for clicks or Enter key
+        function handleFocusRequest() {
+            if (timerState === "IDLE" || timerState === "READY") {
+                initiateNewSession();
+            } else if (timerState === "BREAK") {
+                startNewFocusBlock();
+            } else if (timerState === "WORK" && isAwaitingTask) {
+                lockInNewTask(taskInput.value.trim());
             }
         }
 
-        // Swaps UI to let user type a new task mid-session
+        function handleEnterKey(event) {
+            if (event.key === "Enter") {
+                handleFocusRequest();
+            }
+        }
+
         function openTaskEditor() {
             taskDisplayWrapper.style.display = "none";
             taskInput.style.display = "block";
             taskInput.value = "";
-            taskInput.placeholder = "What is the next objective?";
+            taskInput.placeholder = "What is the next objective? (optional)";
             taskInput.focus();
+            isAwaitingTask = true;
         }
 
         // Locks the task in and appends it to the block history silently
-        function lockInNewTask() {
-            const newTaskText = taskInput.value.trim() || "Deep Work";
+        function lockInNewTask(text) {
+            const newTaskText = text || "Deep Focus";
             activeTaskText = newTaskText;
+            isAwaitingTask = false;
+            
+            if (taskPromptTimeout) clearTimeout(taskPromptTimeout);
 
-            // Dynamically chain the task names in the backend for the stats page!
-            if (currentBlock && !currentBlock.taskName.includes(newTaskText)) {
-                currentBlock.taskName += ` → ${newTaskText}`;
+            // Dynamically chain task names for stats
+            if (currentBlock) {
+                if (currentBlock.taskName === "Deep Focus" || !currentBlock.taskName) {
+                    currentBlock.taskName = newTaskText;
+                } else if (!currentBlock.taskName.includes(newTaskText)) {
+                    currentBlock.taskName += ` → ${newTaskText}`;
+                }
             }
 
             taskInput.style.display = "none";
             taskDisplayWrapper.style.display = "flex";
+            editTaskBtn.style.display = "block"; 
+            
+            mainDisplay.className = "main-display text-work text-task";
             mainDisplay.innerText = activeTaskText;
-            document.title = `🛠 ${activeTaskText}`; 
+            document.title = `🛠 ${activeTaskText}`;
         }
 
-        function startWork() {
-            if (timerState === "WORK") return;
-
-            if (timerState === "IDLE" || timerState === "READY") {
-                activeTaskText = taskInput.value.trim() || "Deep Work";
-            }
+        // STEP 1: Fire up the brand new session and grab the Macro Goal
+        function initiateNewSession() {
+            sessionGoalText = taskInput.value.trim() || "Deep Work Session";
+            
+            // Smooth animation to push the goal up to the top label
+            modeLabel.style.opacity = "0";
+            modeLabel.style.transform = "translateY(-10px)";
+            setTimeout(() => {
+                modeLabel.innerText = sessionGoalText;
+                modeLabel.style.opacity = "1";
+                modeLabel.style.transform = "translateY(0)";
+            }, 200);
 
             const now = Date.now();
+            currentSession = {
+                sessionId: now,
+                startTime: now,
+                date: new Date().toLocaleDateString(),
+                blocks: [],
+                status: "COMPLETED",
+                sessionGoal: sessionGoalText
+            };
+            
+            startNewFocusBlock();
+        }
 
-            if (!currentSession) {
-                currentSession = {
-                    sessionId: now,
-                    startTime: now,
-                    date: new Date().toLocaleDateString(),
-                    blocks: [],
-                    status: "COMPLETED" 
-                };
-            }
+        // STEP 2: Start a block, start the clock, and wait for the Micro Task
+        function startNewFocusBlock() {
+            const now = Date.now();
 
             if (timerState === "BREAK" && currentBlock) {
                 currentBlock.endTime = now;
@@ -398,7 +440,7 @@
             currentBlock = {
                 blockId: now,
                 type: "FOCUS",
-                taskName: activeTaskText, 
+                taskName: "Deep Focus", // Default placeholder
                 startTime: now,
                 status: "ACTIVE"
             };
@@ -406,15 +448,24 @@
             timerState = "WORK";
             currentStartTime = now;
             
-            // Show Task Display, Hide Input
-            taskInput.style.display = "none";
-            taskDisplayWrapper.style.display = "flex";
-            editTaskBtn.style.display = "block"; // Show the subtle edit button!
-
-            mainDisplay.className = "main-display text-work text-task";
-            mainDisplay.innerText = activeTaskText;
+            // Reset UI for the Micro-Task
+            taskDisplayWrapper.style.display = "none";
+            taskInput.style.display = "block";
+            taskInput.value = "";
+            taskInput.placeholder = "What problem are you solving? (optional)";
+            taskInput.focus();
             
-            modeLabel.innerText = "FOCUS";
+            isAwaitingTask = true;
+
+            // 60-Second Auto-Lock if they don't type anything
+            if (taskPromptTimeout) clearTimeout(taskPromptTimeout);
+            taskPromptTimeout = setTimeout(() => {
+                if (isAwaitingTask) {
+                    lockInNewTask(taskInput.value.trim()); // Captures partial text or defaults
+                }
+            }, 60000);
+            
+            modeLabel.innerText = sessionGoalText;
             modeLabel.className = "mode-label text-work";
             targetLabel.innerText = "";
             ambientLight.style.background = "radial-gradient(circle, rgba(10, 132, 255, 0.15) 0%, transparent 60%)";
@@ -473,14 +524,19 @@
             alertShown = false;
 
             // Rest UI updates
+            if (taskPromptTimeout) clearTimeout(taskPromptTimeout);
+            isAwaitingTask = false;
+            
             taskInput.style.display = "none";
             taskDisplayWrapper.style.display = "flex";
             editTaskBtn.style.display = "none"; // Hide edit button on breaks
             mainDisplay.className = "main-display text-rest";
             mainDisplay.innerText = "00:00";
 
-            modeLabel.innerText = "REST";
+            // Keep the goal anchored during break
+            modeLabel.innerText = "RESTING • " + sessionGoalText;
             modeLabel.className = "mode-label text-rest";
+            
             targetLabel.innerText = `Earned: ${formatTime(plannedBreakSec)}`;
             ambientLight.style.background = "radial-gradient(circle, rgba(255, 159, 10, 0.15) 0%, transparent 60%)";
             
@@ -522,15 +578,27 @@
             currentSession.tangibleResults = resultsText;
             saveSessionToHistory();
 
+            // Total Reset UI
             timerState = "IDLE";
             activeTaskText = "";
-            taskInput.value = "";
+            sessionGoalText = "";
+            isAwaitingTask = false;
+            if (taskPromptTimeout) clearTimeout(taskPromptTimeout);
+
             taskDisplayWrapper.style.display = "none";
             taskInput.style.display = "block";
-            taskInput.placeholder = "What problem are we solving?";
+            taskInput.value = "";
+            taskInput.placeholder = "What do you want to do today?";
             
-            modeLabel.innerText = "READY";
-            modeLabel.className = "mode-label";
+            modeLabel.style.opacity = "0";
+            modeLabel.style.transform = "translateY(10px)";
+            setTimeout(() => {
+                modeLabel.innerText = "READY";
+                modeLabel.className = "mode-label";
+                modeLabel.style.opacity = "1";
+                modeLabel.style.transform = "translateY(0)";
+            }, 200);
+            
             targetLabel.innerText = "";
             document.title = "Focus & Rest";
             ambientLight.style.background = "radial-gradient(circle, rgba(10, 132, 255, 0.15) 0%, transparent 60%)";
@@ -562,7 +630,12 @@
                 const formatted = formatTime(elapsed);
                 
                 if (timerState === "WORK") {
-                    document.title = `🛠 ${activeTaskText}`;
+                    // Only update title if we aren't actively typing the prompt
+                    if (!isAwaitingTask) {
+                        document.title = `🛠 ${activeTaskText}`;
+                    } else {
+                        document.title = `🛠 Deep Work`;
+                    }
                 }
 
                 if (timerState === "BREAK") {
