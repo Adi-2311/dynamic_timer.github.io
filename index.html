@@ -69,7 +69,6 @@
         /* Ultra-Sleek Typography */
         .target-label { color: var(--text-muted); font-size: 12px; font-weight: 500; height: 20px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 2px;}
         
-        /* Added smooth transform transitions for the sliding label */
         .mode-label { 
             font-size: 13px; 
             font-weight: 600; 
@@ -90,12 +89,13 @@
             margin-bottom: 20px;
         }
 
+        /* FIXED: Removed 'all' transition to stop layout glitches, added scale/opacity */
         .main-display { 
             font-size: 110px; 
             font-weight: 200; 
             font-variant-numeric: tabular-nums;
             letter-spacing: -4px;
-            transition: all 0.4s ease;
+            transition: color 0.4s ease, text-shadow 0.4s ease, opacity 0.2s ease, transform 0.2s ease;
             line-height: 1;
             width: 100%;
         }
@@ -158,7 +158,6 @@
             font-size: 15px;
         }
         
-        /* Progress Bar (Pulse sped up to 0.5s to act as ticking seconds) */
         .progress-bg { background-color: rgba(255,255,255,0.05); height: 3px; border-radius: 3px; overflow: hidden; margin-bottom: 40px; }
         .progress-fill { height: 100%; width: 0%; background-color: var(--text-muted); transition: width 0.1s linear, background-color 0.4s ease, box-shadow 0.4s ease; }
         .indeterminate { animation: pulse 0.5s infinite alternate ease-in-out; }
@@ -348,12 +347,11 @@
             currentBlock = null;
         }
 
-        // Central interaction handler for clicks or Enter key
         function handleFocusRequest() {
             if (timerState === "IDLE" || timerState === "READY") {
                 initiateNewSession();
             } else if (timerState === "BREAK") {
-                startNewFocusBlock(true); // <--- We pass TRUE here to signify we are returning from a break!
+                startNewFocusBlock(true);
             } else if (timerState === "WORK" && isAwaitingTask) {
                 lockInNewTask(taskInput.value.trim());
             }
@@ -374,7 +372,7 @@
             isAwaitingTask = true;
         }
 
-        // Locks the task in and appends it to the block history silently
+        // UPDATED: Now uses a smooth 200ms fade transition
         function lockInNewTask(text) {
             const newTaskText = text || "Deep Focus";
             activeTaskText = newTaskText;
@@ -382,7 +380,6 @@
             
             if (taskPromptTimeout) clearTimeout(taskPromptTimeout);
 
-            // Dynamically chain task names for stats
             if (currentBlock) {
                 if (currentBlock.taskName === "Deep Focus" || !currentBlock.taskName) {
                     currentBlock.taskName = newTaskText;
@@ -391,21 +388,29 @@
                 }
             }
 
-            taskInput.style.display = "none";
-            taskDisplayWrapper.style.display = "flex";
-            editTaskBtn.style.display = "block"; 
-            
-            mainDisplay.className = "main-display text-work text-task";
-            mainDisplay.innerText = activeTaskText;
-            document.title = `🛠 ${activeTaskText}`;
+            // Smooth crossfade out
+            mainDisplay.style.opacity = "0";
+            mainDisplay.style.transform = "scale(0.95)";
+
+            setTimeout(() => {
+                taskInput.style.display = "none";
+                taskDisplayWrapper.style.display = "flex";
+                editTaskBtn.style.display = "block"; 
+                
+                mainDisplay.className = "main-display text-work text-task";
+                mainDisplay.innerText = activeTaskText;
+                document.title = `🛠 ${activeTaskText}`;
+
+                // Smooth crossfade in
+                mainDisplay.style.opacity = "1";
+                mainDisplay.style.transform = "scale(1)";
+            }, 200);
         }
 
-        // STEP 1: Fire up the brand new session and grab the Macro Goal
         function initiateNewSession() {
             sessionGoalText = taskInput.value.trim() || "Deep Work Session";
-            activeTaskText = ""; // Clear any leftover task memory
+            activeTaskText = ""; 
             
-            // Smooth animation to push the goal up to the top label
             modeLabel.style.opacity = "0";
             modeLabel.style.transform = "translateY(-10px)";
             setTimeout(() => {
@@ -424,10 +429,10 @@
                 sessionGoal: sessionGoalText
             };
             
-            startNewFocusBlock(false); // Starting fresh, so not returning from break
+            startNewFocusBlock(false); 
         }
 
-        // STEP 2: Start a block, start the clock, and wait for the Micro Task
+        // UPDATED: Now uses smooth transitions for restoring text after break
         function startNewFocusBlock(returningFromBreak = false) {
             const now = Date.now();
 
@@ -441,7 +446,7 @@
             currentBlock = {
                 blockId: now,
                 type: "FOCUS",
-                taskName: returningFromBreak ? activeTaskText : "Deep Focus", // Inherit task if returning
+                taskName: returningFromBreak ? activeTaskText : "Deep Focus",
                 startTime: now,
                 status: "ACTIVE"
             };
@@ -450,7 +455,6 @@
             currentStartTime = now;
             
             if (!returningFromBreak) {
-                // If starting fresh, reset UI for the Micro-Task prompt
                 taskDisplayWrapper.style.display = "none";
                 taskInput.style.display = "block";
                 taskInput.value = "";
@@ -459,7 +463,6 @@
                 
                 isAwaitingTask = true;
 
-                // 60-Second Auto-Lock if they don't type anything
                 if (taskPromptTimeout) clearTimeout(taskPromptTimeout);
                 taskPromptTimeout = setTimeout(() => {
                     if (isAwaitingTask) {
@@ -467,14 +470,22 @@
                     }
                 }, 60000);
             } else {
-                // If returning from break, instantly restore the text UI!
-                taskInput.style.display = "none";
-                taskDisplayWrapper.style.display = "flex";
-                editTaskBtn.style.display = "block"; 
-                
-                mainDisplay.className = "main-display text-work text-task";
-                mainDisplay.innerText = activeTaskText;
-                isAwaitingTask = false;
+                // Smooth crossfade back to task text
+                mainDisplay.style.opacity = "0";
+                mainDisplay.style.transform = "scale(0.95)";
+
+                setTimeout(() => {
+                    taskInput.style.display = "none";
+                    taskDisplayWrapper.style.display = "flex";
+                    editTaskBtn.style.display = "block"; 
+                    
+                    mainDisplay.className = "main-display text-work text-task";
+                    mainDisplay.innerText = activeTaskText;
+                    isAwaitingTask = false;
+
+                    mainDisplay.style.opacity = "1";
+                    mainDisplay.style.transform = "scale(1)";
+                }, 200);
             }
             
             modeLabel.innerText = sessionGoalText;
@@ -506,6 +517,7 @@
             document.getElementById("modalRatingVal").innerText = document.getElementById("modalSlider").value;
         }
 
+        // UPDATED: Now uses smooth transitions for loading the break timer
         function submitRatingAndRest() {
             const rating = parseInt(document.getElementById("modalSlider").value);
             document.getElementById("ratingModal").style.display = "none";
@@ -535,17 +547,24 @@
             currentStartTime = now;
             alertShown = false;
 
-            // Rest UI updates
             if (taskPromptTimeout) clearTimeout(taskPromptTimeout);
             isAwaitingTask = false;
             
-            taskInput.style.display = "none";
-            taskDisplayWrapper.style.display = "flex";
-            editTaskBtn.style.display = "none"; // Hide edit button on breaks
-            mainDisplay.className = "main-display text-rest";
-            mainDisplay.innerText = "00:00";
+            // Smooth crossfade to Rest timer
+            mainDisplay.style.opacity = "0";
+            mainDisplay.style.transform = "scale(0.95)";
 
-            // Keep the goal anchored during break
+            setTimeout(() => {
+                taskInput.style.display = "none";
+                taskDisplayWrapper.style.display = "flex";
+                editTaskBtn.style.display = "none"; 
+                mainDisplay.className = "main-display text-rest";
+                mainDisplay.innerText = "00:00";
+
+                mainDisplay.style.opacity = "1";
+                mainDisplay.style.transform = "scale(1)";
+            }, 200);
+
             modeLabel.innerText = "RESTING • " + sessionGoalText;
             modeLabel.className = "mode-label text-rest";
             
@@ -590,13 +609,14 @@
             currentSession.tangibleResults = resultsText;
             saveSessionToHistory();
 
-            // Total Reset UI
             timerState = "IDLE";
             activeTaskText = "";
             sessionGoalText = "";
             isAwaitingTask = false;
             if (taskPromptTimeout) clearTimeout(taskPromptTimeout);
 
+            mainDisplay.style.opacity = "1";
+            mainDisplay.style.transform = "scale(1)";
             taskDisplayWrapper.style.display = "none";
             taskInput.style.display = "block";
             taskInput.value = "";
@@ -642,7 +662,6 @@
                 const formatted = formatTime(elapsed);
                 
                 if (timerState === "WORK") {
-                    // Only update title if we aren't actively typing the prompt
                     if (!isAwaitingTask) {
                         document.title = `🛠 ${activeTaskText}`;
                     } else {
