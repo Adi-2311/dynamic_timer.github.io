@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Focus & Rest Timer</title>
+    <title>Focus & Rest</title>
     <style>
         /* Premium Typography */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&display=swap');
 
         :root {
             --bg-dark: #030305;
@@ -70,14 +70,59 @@
         .target-label { color: var(--text-muted); font-size: 12px; font-weight: 500; height: 20px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 2px;}
         .mode-label { font-size: 14px; font-weight: 600; letter-spacing: 6px; color: var(--text-muted); margin-bottom: 20px; transition: color 0.4s ease;}
         
-        .time-label { 
-            font-size: 110px; /* Massive, beautiful timer */
-            font-weight: 200; /* Ultra-thin font */
-            margin: 0 0 30px 0; 
+        /* The main display area (handles both Time and Text) */
+        .display-container {
+            min-height: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .main-display { 
+            font-size: 110px; 
+            font-weight: 200; 
             font-variant-numeric: tabular-nums;
             letter-spacing: -4px;
-            transition: color 0.4s ease, text-shadow 0.4s ease;
+            transition: all 0.4s ease;
             line-height: 1;
+        }
+
+        /* Dynamic Class applied when showing the task string instead of the timer */
+        .text-task {
+            font-size: 42px !important;
+            font-weight: 300 !important;
+            letter-spacing: -1px !important;
+            line-height: 1.2 !important;
+            word-wrap: break-word;
+            padding: 0 10px;
+        }
+
+        /* The Task Input Field */
+        .task-input {
+            width: 90%;
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            font-size: 20px;
+            font-weight: 300;
+            text-align: center;
+            font-family: inherit;
+            outline: none;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--glass-border);
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+        
+        .task-input:focus {
+            border-bottom: 1px solid var(--accent-blue);
+            box-shadow: 0 10px 20px -10px rgba(10, 132, 255, 0.3);
+        }
+
+        .task-input::placeholder {
+            color: rgba(107, 107, 112, 0.5);
+            font-size: 16px;
         }
         
         /* Razor-thin Progress Bar */
@@ -134,7 +179,11 @@
     <div class="app-container">
         <div class="target-label" id="targetLabel"></div>
         <div class="mode-label" id="modeLabel">READY</div>
-        <div class="time-label" id="timeLabel">00:00:00</div>
+        
+        <div class="display-container">
+            <input type="text" id="taskInput" class="task-input" placeholder="What problem are we solving?" maxlength="40" autocomplete="off">
+            <div class="main-display" id="mainDisplay" style="display: none;">00:00</div>
+        </div>
         
         <div class="progress-bg">
             <div class="progress-fill" id="progressBar"></div>
@@ -188,13 +237,15 @@
         let plannedBreakSec = 0;
         let clockInterval;
         let alertShown = false;
+        let activeTaskText = ""; // Holds the current task
 
         let currentSession = null;
         let currentBlock = null;
 
         // UI Elements
         const modeLabel = document.getElementById("modeLabel");
-        const timeLabel = document.getElementById("timeLabel");
+        const mainDisplay = document.getElementById("mainDisplay");
+        const taskInput = document.getElementById("taskInput");
         const targetLabel = document.getElementById("targetLabel");
         const progressBar = document.getElementById("progressBar");
         const startBtn = document.getElementById("startBtn");
@@ -235,6 +286,11 @@
         function startWork() {
             if (timerState === "WORK") return;
 
+            // Grab the task before wiping the UI
+            if (timerState === "IDLE" || timerState === "READY") {
+                activeTaskText = taskInput.value.trim() || "Deep Work";
+            }
+
             const now = Date.now();
 
             if (!currentSession) {
@@ -257,6 +313,7 @@
             currentBlock = {
                 blockId: now,
                 type: "FOCUS",
+                taskName: activeTaskText, // Saving it to data silently
                 startTime: now,
                 status: "ACTIVE"
             };
@@ -264,9 +321,14 @@
             timerState = "WORK";
             currentStartTime = now;
             
+            // UI Switch: Hide input, Show Task Text
+            taskInput.style.display = "none";
+            mainDisplay.style.display = "block";
+            mainDisplay.className = "main-display text-work text-task";
+            mainDisplay.innerText = activeTaskText;
+            
             modeLabel.innerText = "FOCUS";
             modeLabel.className = "mode-label text-work";
-            timeLabel.className = "time-label text-work";
             targetLabel.innerText = "";
             ambientLight.style.background = "radial-gradient(circle, rgba(10, 132, 255, 0.15) 0%, transparent 60%)";
             
@@ -330,11 +392,13 @@
             currentStartTime = now;
             alertShown = false;
 
+            // UI Switch: Remove text styling, return to Chronometric Time
+            mainDisplay.className = "main-display text-rest";
+            mainDisplay.innerText = "00:00";
+
             modeLabel.innerText = "REST";
             modeLabel.className = "mode-label text-rest";
-            timeLabel.className = "time-label text-rest";
-            timeLabel.innerText = "00:00";
-            targetLabel.innerText = `Target: ${formatTime(plannedBreakSec)}`;
+            targetLabel.innerText = `Earned: ${formatTime(plannedBreakSec)}`;
             ambientLight.style.background = "radial-gradient(circle, rgba(255, 159, 10, 0.15) 0%, transparent 60%)";
             
             progressBar.className = "progress-fill bg-rest";
@@ -378,11 +442,16 @@
             currentSession.overallRating = sessionRating;
             saveSessionToHistory();
 
+            // Full Reset UI
             timerState = "IDLE";
+            activeTaskText = "";
+            taskInput.value = "";
+            
+            mainDisplay.style.display = "none";
+            taskInput.style.display = "block";
+            
             modeLabel.innerText = "READY";
             modeLabel.className = "mode-label";
-            timeLabel.className = "time-label";
-            timeLabel.innerText = "00:00:00";
             targetLabel.innerText = "";
             document.title = "Focus & Rest";
             ambientLight.style.background = "radial-gradient(circle, rgba(10, 132, 255, 0.15) 0%, transparent 60%)";
@@ -416,11 +485,16 @@
                 const elapsed = (Date.now() - currentStartTime) / 1000;
                 const formatted = formatTime(elapsed);
                 
-                timeLabel.innerText = formatted;
-                const icon = timerState === "WORK" ? "🛠" : "☕️";
-                document.title = `${icon} ${formatted} - Focus & Rest`;
+                // Only show the ticking timer in the tab title while working
+                if (timerState === "WORK") {
+                    document.title = `🛠 ${formatted} - ${activeTaskText}`;
+                }
 
+                // If resting, show the ticking timer on the main screen AND tab title
                 if (timerState === "BREAK") {
+                    mainDisplay.innerText = formatted;
+                    document.title = `☕️ ${formatted} - Resting`;
+                    
                     let fill = Math.min((elapsed / plannedBreakSec) * 100, 100);
                     progressBar.style.width = `${fill}%`;
 
@@ -429,11 +503,11 @@
                         chime.play();
                         modeLabel.innerText = "TIME UP";
                         modeLabel.className = "mode-label text-end";
-                        timeLabel.className = "time-label text-end";
+                        mainDisplay.className = "main-display text-end";
                         progressBar.className = "progress-fill bg-end";
                         ambientLight.style.background = "radial-gradient(circle, rgba(255, 69, 58, 0.15) 0%, transparent 60%)";
                         
-                        setTimeout(() => alert("Your earned break time is up! Ready to focus?"), 100);
+                        setTimeout(() => alert(`Your earned break time is up! Ready to conquer the next problem?`), 100);
                     }
                 }
             }, 100);
