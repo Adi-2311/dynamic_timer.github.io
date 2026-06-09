@@ -107,7 +107,7 @@
 
     <div class="modal-overlay" id="ratingModal">
         <div class="modal">
-            <h3>How productive was this session?</h3>
+            <h3>How productive was this block?</h3>
             <div class="rating-val" id="modalRatingVal">5</div>
             <input type="range" id="modalSlider" min="0" max="10" value="5" oninput="updateModalVal()">
             <div class="modal-labels">
@@ -115,6 +115,19 @@
                 <span>10 - Deep Focus</span>
             </div>
             <button class="btn-submit" onclick="submitRatingAndRest()">Start Break</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="sessionRatingModal">
+        <div class="modal">
+            <h3>How productive was this entire session?</h3>
+            <div class="rating-val" id="sessionModalRatingVal">5</div>
+            <input type="range" id="sessionModalSlider" min="0" max="10" value="5" oninput="updateSessionModalVal()">
+            <div class="modal-labels">
+                <span>0 - Wasted Time</span>
+                <span>10 - Extremely Productive</span>
+            </div>
+            <button class="btn-submit" onclick="submitSessionRating()">Save Session</button>
         </div>
     </div>
 
@@ -180,18 +193,16 @@
 
             const now = Date.now();
 
-            // 1. If no active focus session exists, create one
             if (!currentSession) {
                 currentSession = {
                     sessionId: now,
                     startTime: now,
                     date: new Date().toLocaleDateString(),
                     blocks: [],
-                    status: "COMPLETED" // Defaults to completed unless interrupted
+                    status: "COMPLETED" 
                 };
             }
 
-            // 2. If coming from a break, close the break block
             if (timerState === "BREAK" && currentBlock) {
                 currentBlock.endTime = now;
                 currentBlock.durationSec = parseFloat(((now - currentBlock.startTime) / 1000).toFixed(2));
@@ -199,7 +210,6 @@
                 currentSession.blocks.push(currentBlock);
             }
 
-            // 3. Create a focus block inside the session
             currentBlock = {
                 blockId: now,
                 type: "FOCUS",
@@ -210,7 +220,6 @@
             timerState = "WORK";
             currentStartTime = now;
             
-            // Visuals
             modeLabel.innerText = "FOCUS";
             modeLabel.className = "mode-label text-work";
             timeLabel.className = "time-label text-work";
@@ -233,7 +242,6 @@
             timerState = "RATING";
             stopClock();
             
-            // Show rating modal
             document.getElementById("modalSlider").value = 5;
             document.getElementById("modalRatingVal").innerText = "5";
             document.getElementById("ratingModal").style.display = "flex";
@@ -243,13 +251,16 @@
             document.getElementById("modalRatingVal").innerText = document.getElementById("modalSlider").value;
         }
 
+        function updateSessionModalVal() {
+            document.getElementById("sessionModalRatingVal").innerText = document.getElementById("sessionModalSlider").value;
+        }
+
         function submitRatingAndRest() {
             const rating = parseInt(document.getElementById("modalSlider").value);
             document.getElementById("ratingModal").style.display = "none";
             
             const now = Date.now();
 
-            // 1. Close current focus block
             if (currentBlock && currentBlock.type === "FOCUS") {
                 currentBlock.endTime = now;
                 currentBlock.durationSec = parseFloat(pendingWorkSec.toFixed(2));
@@ -258,14 +269,12 @@
                 currentSession.blocks.push(currentBlock);
             }
 
-            // Calculate break length
             const ratio = parseInt(ratioSlider.value) / 100;
             const calcBreak = pendingWorkSec * ratio;
             plannedBreakSec = Math.max(calcBreak, 60.0);
 
-            // 2. Create break block inside the same session
             currentBlock = {
-                blockId: now + 1, // ensure unique ID
+                blockId: now + 1, 
                 type: "BREAK",
                 startTime: now,
                 plannedSec: parseFloat(plannedBreakSec.toFixed(2)),
@@ -276,7 +285,6 @@
             currentStartTime = now;
             alertShown = false;
 
-            // Visuals
             modeLabel.innerText = "REST";
             modeLabel.className = "mode-label text-rest";
             timeLabel.className = "time-label text-rest";
@@ -292,18 +300,20 @@
             startClock();
         }
 
+        // Changed: Now opens the overall session rating modal instead of closing directly
         function endSession() {
             if (timerState === "IDLE") return;
             
             stopClock();
             const now = Date.now();
             
-            // 1. Close current block
+            // Hide the block rating modal just in case the user clicked End while rating a block
+            document.getElementById("ratingModal").style.display = "none";
+            
             if (currentBlock) {
                 currentBlock.endTime = now;
                 currentBlock.durationSec = parseFloat(((now - currentBlock.startTime) / 1000).toFixed(2));
                 
-                // If they end during a focus block without rating it, mark it as interrupted
                 if (timerState === "WORK" || timerState === "RATING") {
                     currentBlock.status = "INTERRUPTED";
                 } else {
@@ -312,10 +322,24 @@
                 currentSession.blocks.push(currentBlock);
             }
 
-            // 2. Close parent focus session
+            // Show Session Rating Modal
+            document.getElementById("sessionModalSlider").value = 5;
+            document.getElementById("sessionModalRatingVal").innerText = "5";
+            document.getElementById("sessionRatingModal").style.display = "flex";
+        }
+
+        // NEW: Finalizes the session and saves to history
+        function submitSessionRating() {
+            const sessionRating = parseInt(document.getElementById("sessionModalSlider").value);
+            document.getElementById("sessionRatingModal").style.display = "none";
+            
+            // Attach the overall rating to the session object
+            currentSession.overallRating = sessionRating;
+
+            // Save parent focus session
             saveSessionToHistory();
 
-            // 3. Reset UI
+            // Reset UI
             timerState = "IDLE";
             modeLabel.innerText = "READY";
             modeLabel.className = "mode-label";
@@ -346,6 +370,7 @@
                 }
                 
                 currentSession.status = "ABANDONED";
+                // Note: We intentionally do NOT set an overallRating here, so it remains blank.
                 saveSessionToHistory();
             }
         });
