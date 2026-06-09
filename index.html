@@ -1,22 +1,32 @@
+<title>Focus & Rest</title>
+<style> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus & Rest</title>
+    <style> ```
+
+Because HTML and CSS have strict rules, putting HTML tags inside a `<style>` block causes the browser to completely panic. It abandons parsing the CSS entirely, which is why your page reverted back to raw, unstyled text!
+
+### The Fix
+
+I have cleaned up the `<head>` section of your document. Your Google Analytics code is safely intact, the duplicate tags are removed, and your CSS is back to being perfectly readable by the browser. 
+
+Copy and paste this completely fixed code directly over your **`index.html`** file, and your premium design will instantly return!
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-YH1R4BK2TP"></script>
-<script>
-window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());
-
-gtag('config', 'G-YH1R4BK2TP');
-</script>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Focus & Rest</title>
-<style>
-    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Focus & Rest</title>
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-YH1R4BK2TP"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-YH1R4BK2TP');
+    </script>
+
     <style>
         /* Premium Typography */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&display=swap');
