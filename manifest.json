@@ -7,7 +7,7 @@
   "theme_color": "#030305",
   "icons": [
     {
-      "src": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Apple_logo_grey.svg/512px-Apple_logo_grey.svg.png",
+      "src": "file:///Users/adityasingh/Downloads/TT%20Squares.PNG",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
