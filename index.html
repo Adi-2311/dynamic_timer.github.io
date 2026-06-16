@@ -2,8 +2,12 @@
 <html lang="en" style="background-color: #030305; color: #FFFFFF;">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#030305">
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Apple_logo_grey.svg/512px-Apple_logo_grey.svg.png">
+
     <title>Focus & Rest</title>
 
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-YH1R4BK2TP"></script>
@@ -65,9 +69,10 @@
 
         /* Frosted Glass App Card */
         .app-container {
-            width: 400px;
+            width: 90%;
+            max-width: 440px;
             text-align: center;
-            padding: 50px 40px;
+            padding: 50px 30px;
             background: var(--glass-bg);
             border: 1px solid var(--glass-border);
             border-radius: 48px;
@@ -77,130 +82,125 @@
             position: relative;
             opacity: 0;
             animation: slideUpFade 0.6s ease forwards;
+            box-sizing: border-box;
         }
 
+        /* Subtle Settings Icon */
+        .settings-icon {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            color: var(--text-muted);
+            font-size: 18px;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: all 0.3s ease;
+            display: none;
+        }
+        .settings-icon:hover { opacity: 1; transform: rotate(45deg); color: var(--text-main);}
+
         /* Ultra-Sleek Typography */
-        .target-label { color: var(--text-muted); font-size: 12px; font-weight: 500; height: 20px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 2px;}
-        
         .mode-label { 
-            font-size: 13px; 
+            font-size: 12px; 
             font-weight: 600; 
-            letter-spacing: 4px; 
+            letter-spacing: 3px; 
             color: var(--text-muted); 
-            margin-bottom: 20px; 
-            transition: opacity 0.3s ease, transform 0.3s ease, color 0.4s ease;
+            margin-bottom: 25px; 
+            transition: opacity 0.4s ease, transform 0.4s ease, color 0.4s ease;
             text-transform: uppercase;
+            min-height: 15px;
         }
         
-        /* The main display area */
         .display-container {
-            min-height: 160px; /* Increased slightly to prevent layout bounces */
+            min-height: 160px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             margin-bottom: 20px;
+            position: relative;
         }
 
         .main-display { 
-            font-size: 110px; 
+            font-size: clamp(60px, 20vw, 110px); /* Makes timer fit on mobile */
             font-weight: 200; 
             font-variant-numeric: tabular-nums;
             letter-spacing: -4px;
-            transition: opacity 0.3s ease, transform 0.3s ease, color 0.4s ease, text-shadow 0.4s ease;
+            transition: opacity 0.4s ease, transform 0.4s ease, color 0.4s ease, text-shadow 0.4s ease;
             line-height: 1;
             width: 100%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            pointer-events: none;
         }
 
         .text-task {
-            font-size: 42px !important;
+            font-size: clamp(24px, 8vw, 36px) !important;
             font-weight: 300 !important;
             letter-spacing: -1px !important;
-            line-height: 1.2 !important;
+            line-height: 1.3 !important;
             word-wrap: break-word;
             padding: 0 10px;
         }
 
-        /* Next Task / Edit Button */
-        .edit-task-btn {
-            font-size: 11px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-top: 15px;
-            cursor: pointer;
-            opacity: 0.4;
-            transition: all 0.3s ease;
-            padding: 6px 16px;
-            border-radius: 12px;
-            border: 1px solid transparent;
-        }
-        
-        .edit-task-btn:hover {
-            opacity: 1;
-            color: var(--text-main);
-            border: 1px solid var(--glass-border);
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        /* The Task Input Field */
         .task-input {
-            width: 90%;
-            background: transparent;
-            border: none;
-            color: var(--text-main);
-            font-size: 18px;
-            font-weight: 300;
-            text-align: center;
-            font-family: inherit;
-            outline: none;
-            padding: 15px 0;
-            border-bottom: 1px solid var(--glass-border);
-            transition: opacity 0.3s ease, transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-            margin-top: 20px;
+            width: 100%; background: transparent; border: none; color: var(--text-main); font-size: 22px; font-weight: 300;
+            text-align: center; font-family: inherit; outline: none; padding: 15px 0; transition: all 0.4s ease;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10;
         }
-        
-        .task-input:focus {
-            border-bottom: 1px solid var(--accent-blue);
-            box-shadow: 0 10px 20px -10px rgba(10, 132, 255, 0.3);
-        }
+        .task-input::placeholder { color: rgba(107, 107, 112, 0.4); font-weight: 200; transition: color 0.3s ease; }
+        .task-input:focus::placeholder { color: rgba(107, 107, 112, 0.1); }
 
-        .task-input::placeholder {
-            color: rgba(107, 107, 112, 0.5);
-            font-size: 15px;
+        .input-glow-line {
+            position: absolute; bottom: 20%; left: 50%; transform: translateX(-50%); width: 0%; height: 1px;
+            background: var(--accent-blue); box-shadow: 0 0 15px var(--accent-blue); transition: width 0.4s ease, opacity 0.4s ease; opacity: 0;
         }
-        
-        /* Progress Bar */
-        .progress-bg { background-color: rgba(255,255,255,0.05); height: 3px; border-radius: 3px; overflow: hidden; margin-bottom: 40px; }
+        .task-input:focus ~ .input-glow-line { width: 60%; opacity: 1; }
+
+        .edit-task-btn {
+            font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; margin-top: 10px;
+            cursor: pointer; opacity: 0.4; transition: all 0.3s ease; padding: 6px 16px; border-radius: 12px; border: 1px solid transparent;
+            position: absolute; bottom: -30px; left: 50%; transform: translateX(-50%); display: none;
+        }
+        .edit-task-btn:hover { opacity: 1; color: var(--text-main); border: 1px solid var(--glass-border); background: rgba(255, 255, 255, 0.05); }
+
+        .progress-wrapper { opacity: 0; transition: opacity 0.4s ease; pointer-events: none; margin-top: 20px; margin-bottom: 30px; }
+        .progress-bg { background-color: rgba(255,255,255,0.05); height: 2px; border-radius: 2px; overflow: hidden; width: 80%; margin: 0 auto;}
         .progress-fill { height: 100%; width: 0%; background-color: var(--text-muted); transition: width 0.1s linear, background-color 0.4s ease, box-shadow 0.4s ease; }
         .indeterminate { animation: pulse 0.5s infinite alternate ease-in-out; }
         @keyframes pulse { 0% { opacity: 0.1; } 100% { opacity: 1; } }
 
-        /* Minimalist Slider */
-        .ratio-label { color: var(--text-muted); font-size: 13px; font-weight: 400; margin-bottom: 12px; letter-spacing: 0.5px;}
-        input[type="range"] { -webkit-appearance: none; width: 100%; background: rgba(255, 255, 255, 0.05); height: 4px; border-radius: 2px; outline: none; margin-bottom: 50px;}
-        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #FFF; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.5); transition: transform 0.2s; border: 4px solid var(--bg-dark);}
+        .settings-panel {
+            display: none; opacity: 0; transition: opacity 0.3s ease; margin-bottom: 30px; background: rgba(0,0,0,0.3); border-radius: 20px; padding: 20px; border: 1px solid var(--glass-border);
+        }
+        .ratio-label { color: var(--text-muted); font-size: 12px; font-weight: 500; margin-bottom: 12px; letter-spacing: 1px; text-transform: uppercase;}
+        input[type="range"] { -webkit-appearance: none; width: 100%; background: rgba(255, 255, 255, 0.05); height: 4px; border-radius: 2px; outline: none;}
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #FFF; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.5); transition: transform 0.2s;}
         input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
 
-        /* Elegant Pill Buttons */
-        .btn-row { display: flex; justify-content: space-between; gap: 15px; margin-bottom: 20px; }
-        button { border: none; border-radius: 20px; font-size: 15px; font-weight: 500; padding: 18px; cursor: pointer; width: 100%; transition: all 0.3s ease; font-family: inherit; letter-spacing: 0.5px;}
+        .btn-action { 
+            border: none; border-radius: 99px; font-size: 15px; font-weight: 500; padding: 18px 30px; 
+            cursor: pointer; transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1); font-family: inherit; letter-spacing: 0.5px;
+            display: none; opacity: 0; margin: 0 auto 20px auto;
+        }
         
-        .btn-work { background-color: var(--accent-blue); color: white; box-shadow: 0 10px 30px rgba(10, 132, 255, 0.3); }
+        .btn-rest { background-color: transparent; color: var(--text-main); border: 1px solid var(--glass-border); width: 80%;}
+        .btn-rest:hover { background-color: rgba(255, 255, 255, 0.05); transform: translateY(-2px); border-color: rgba(255,255,255,0.1);}
+        
+        .btn-work { background-color: var(--accent-blue); color: white; box-shadow: 0 10px 30px rgba(10, 132, 255, 0.3); width: 80%;}
         .btn-work:hover { background-color: #007AFF; transform: translateY(-2px); box-shadow: 0 15px 35px rgba(10, 132, 255, 0.5); }
         
-        .btn-rest { background-color: transparent; color: var(--text-main); border: 1px solid var(--glass-border); }
-        .btn-rest:hover { background-color: rgba(255, 255, 255, 0.05); transform: translateY(-2px); }
-        
-        .btn-end { background-color: transparent; color: var(--accent-red); width: auto; margin: 0 auto; display: inline-block; font-size: 13px; font-weight: 500; padding: 10px 20px; opacity: 0.7;}
-        .btn-end:hover { opacity: 1; background-color: rgba(255, 69, 58, 0.1); border-radius: 12px;}
+        .btn-end { background-color: transparent; color: var(--accent-red); width: auto; margin: 0 auto; display: none; font-size: 12px; font-weight: 500; padding: 10px 20px; opacity: 0; transition: all 0.3s ease; border-radius: 12px;}
+        .btn-end:hover { background-color: rgba(255, 69, 58, 0.1); }
 
-        .stats-link { color: var(--text-muted); text-decoration: none; font-size: 12px; font-weight: 500; display: inline-block; transition: color 0.2s; margin-top: 35px; text-transform: uppercase; letter-spacing: 1px;}
+        .stats-link { color: var(--text-muted); text-decoration: none; font-size: 11px; font-weight: 500; display: inline-block; transition: color 0.2s; margin-top: 30px; text-transform: uppercase; letter-spacing: 1px; opacity: 0; animation: fadeIn 1s ease forwards 1s;}
         .stats-link:hover { color: var(--text-main); }
 
-        /* Premium Modals */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); animation: fadeIn 0.4s ease; }
-        .modal { background: #0A0A0C; padding: 40px 30px; border-radius: 40px; width: 340px; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05);}
+        .modal { background: #0A0A0C; padding: 40px 30px; border-radius: 40px; width: 90%; max-width: 340px; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); box-sizing: border-box;}
         .modal h3 { margin: 0 0 5px 0; font-size: 18px; font-weight: 500; color: var(--text-main); }
         
         .result-input {
@@ -214,17 +214,12 @@
         .rating-val { font-size: 64px; font-weight: 200; color: var(--text-main); margin: 10px 0 20px 0; letter-spacing: -3px; }
         .modal-labels { display: flex; justify-content: space-between; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-top: -10px; margin-bottom: 30px; text-transform: uppercase; letter-spacing: 1px;}
         
-        .modal .btn-submit { background-color: var(--text-main); color: var(--bg-dark); font-weight: 600;}
-        .modal .btn-submit:hover { background-color: #FFF; transform: translateY(-2px);}
+        .modal .btn-submit { background-color: var(--text-main); color: var(--bg-dark); font-weight: 600; border: none; border-radius: 20px; padding: 15px 30px; width: 100%; cursor: pointer; transition: all 0.3s; font-family: inherit;}
+        .modal .btn-submit:hover { background-color: #FFF; transform: translateY(-2px); box-shadow: 0 10px 20px rgba(255,255,255,0.2);}
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        
-        @keyframes slideUpFade {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes slideUpFade { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Dynamic Color States */
         .text-work { color: var(--accent-blue) !important; text-shadow: 0 0 40px rgba(10, 132, 255, 0.4); }
         .text-rest { color: var(--accent-orange) !important; text-shadow: 0 0 40px rgba(255, 159, 10, 0.4); }
         .text-end { color: var(--accent-red) !important; text-shadow: 0 0 40px rgba(255, 69, 58, 0.4); }
@@ -237,33 +232,34 @@
     <div class="ambient-light" id="ambientLight"></div>
 
     <div class="app-container">
-        <div class="target-label" id="targetLabel"></div>
-        <div class="mode-label" id="modeLabel">READY</div>
+        
+        <div class="settings-icon" id="settingsBtn" onclick="toggleSettings()">⚙️</div>
+
+        <div class="mode-label" id="modeLabel"></div>
         
         <div class="display-container">
-            <input type="text" id="taskInput" class="task-input" placeholder="What do you want to do today?" maxlength="40" autocomplete="off" onkeydown="handleEnterKey(event)">
+            <input type="text" id="taskInput" class="task-input" placeholder="What problem are we solving?" maxlength="40" autocomplete="off" onkeydown="handleEnterKey(event)">
+            <div class="input-glow-line" id="inputGlow"></div>
             
-            <div id="taskDisplayWrapper" style="display: none; width: 100%; flex-direction: column; align-items: center;">
-                <div class="main-display" id="mainDisplay">00:00</div>
-                <div id="editTaskBtn" class="edit-task-btn" onclick="openTaskEditor()">Next Task ↵</div>
-            </div>
+            <div class="main-display" id="mainDisplay">00:00</div>
+            <div id="editTaskBtn" class="edit-task-btn" onclick="openTaskEditor()">Next Step ↵</div>
+        </div>
+
+        <div class="settings-panel" id="settingsPanel">
+            <div class="ratio-label" id="ratioText">Earned Rest Ratio: 20%</div>
+            <input type="range" id="ratioSlider" min="1" max="35" value="20" oninput="updateRatioText()">
         </div>
         
-        <div class="progress-bg">
-            <div class="progress-fill" id="progressBar"></div>
+        <div class="progress-wrapper" id="progressWrapper">
+            <div class="progress-bg"><div class="progress-fill" id="progressBar"></div></div>
         </div>
 
-        <div class="ratio-label" id="ratioText">Break Ratio: 20%</div>
-        <input type="range" id="ratioSlider" min="1" max="35" value="20" oninput="updateRatioText()">
-
-        <div class="btn-row">
-            <button class="btn-work" id="startBtn" onclick="handleFocusRequest()">Start Focus</button>
-            <button class="btn-rest" id="restBtn" onclick="initiateRest()">Rest</button>
-        </div>
-        <button class="btn-end" onclick="endSession()">End Session</button>
+        <button class="btn-action btn-rest" id="restBtn" onclick="initiateRest()">Take a Break</button>
+        <button class="btn-action btn-work" id="startBtn" onclick="startNewFocusBlock(true)">Resume Focus</button>
+        <button class="btn-end" id="endBtn" onclick="endSession()">End Session</button>
         
         <div>
-            <a href="stats.html" class="stats-link">View Stats & History</a>
+            <a href="stats.html" class="stats-link" id="statsLink">View Stats & History</a>
         </div>
     </div> 
 
@@ -274,7 +270,7 @@
             <input type="range" id="modalSlider" min="0" max="10" value="5" oninput="updateModalVal()">
             <div class="modal-labels">
                 <span>0 - Unfocused</span>
-                <span>10 - Deep Focus</span>
+                <span>10 - Flow State</span>
             </div>
             <button class="btn-submit" onclick="submitRatingAndRest()">Start Break</button>
         </div>
@@ -290,6 +286,37 @@
     </div>
 
     <script>
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').then((reg) => {
+                console.log('Service Worker Registered');
+            });
+        }
+
+        // PWA Notification Permission Request
+        function requestNotificationPermission() {
+            if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+                Notification.requestPermission();
+            }
+        }
+
+        // Send PWA Notification
+        function sendPushNotification(title, bodyText) {
+            if ('serviceWorker' in navigator && Notification.permission === 'granted') {
+                navigator.serviceWorker.ready.then(function(registration) {
+                    registration.showNotification(title, {
+                        body: bodyText,
+                        icon: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Apple_logo_grey.svg/512px-Apple_logo_grey.svg.png',
+                        vibrate: [200, 100, 200, 100, 200],
+                        requireInteraction: true
+                    });
+                });
+            } else {
+                // Fallback for browsers that don't support push notifications
+                setTimeout(() => alert(bodyText), 100);
+            }
+        }
+
         // --- State Variables ---
         let timerState = "IDLE"; 
         let currentStartTime = 0;
@@ -309,20 +336,38 @@
         // UI Elements
         const modeLabel = document.getElementById("modeLabel");
         const mainDisplay = document.getElementById("mainDisplay");
-        const taskDisplayWrapper = document.getElementById("taskDisplayWrapper");
         const editTaskBtn = document.getElementById("editTaskBtn");
         const taskInput = document.getElementById("taskInput");
-        const targetLabel = document.getElementById("targetLabel");
+        const inputGlow = document.getElementById("inputGlow");
+        const progressWrapper = document.getElementById("progressWrapper");
         const progressBar = document.getElementById("progressBar");
+        
         const startBtn = document.getElementById("startBtn");
         const restBtn = document.getElementById("restBtn");
+        const endBtn = document.getElementById("endBtn");
+        const statsLink = document.getElementById("statsLink");
+        
+        const settingsBtn = document.getElementById("settingsBtn");
+        const settingsPanel = document.getElementById("settingsPanel");
         const ratioSlider = document.getElementById("ratioSlider");
         const ratioText = document.getElementById("ratioText");
         const ambientLight = document.getElementById("ambientLight");
 
         const chime = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
 
-        function updateRatioText() { ratioText.innerText = `Break Ratio: ${ratioSlider.value}%`; }
+        window.onload = () => { taskInput.focus(); }
+
+        function updateRatioText() { ratioText.innerText = `Earned Rest Ratio: ${ratioSlider.value}%`; }
+
+        function toggleSettings() {
+            if (settingsPanel.style.display === "block") {
+                settingsPanel.style.opacity = "0";
+                setTimeout(() => { settingsPanel.style.display = "none"; }, 300);
+            } else {
+                settingsPanel.style.display = "block";
+                setTimeout(() => { settingsPanel.style.opacity = "1"; }, 10);
+            }
+        }
 
         function formatTime(totalSeconds) {
             const h = Math.floor(totalSeconds / 3600);
@@ -345,43 +390,34 @@
             currentBlock = null;
         }
 
-        function handleFocusRequest() {
-            if (timerState === "IDLE" || timerState === "READY") {
-                initiateNewSession();
-            } else if (timerState === "BREAK") {
-                startNewFocusBlock(true);
-            } else if (timerState === "WORK" && isAwaitingTask) {
-                lockInNewTask(taskInput.value.trim());
+        function handleEnterKey(event) {
+            if (event.key === "Enter") {
+                if (timerState === "IDLE") {
+                    initiateNewSession();
+                } else if (timerState === "WORK" && isAwaitingTask) {
+                    lockInNewTask(taskInput.value.trim());
+                }
             }
         }
 
-        function handleEnterKey(event) {
-            if (event.key === "Enter") handleFocusRequest();
-        }
-
-        // PERFECTED: Smooth transition from Task text back to Input editor
         function openTaskEditor() {
             mainDisplay.style.opacity = "0";
-            mainDisplay.style.transform = "scale(0.95)";
+            mainDisplay.style.transform = "translate(-50%, -50%) scale(0.95)";
+            editTaskBtn.style.display = "none";
             
             setTimeout(() => {
-                taskDisplayWrapper.style.display = "none";
                 taskInput.style.display = "block";
-                taskInput.style.opacity = "0";
-                
-                // Force browser to register the new display property before animating opacity
+                inputGlow.style.display = "block";
                 void taskInput.offsetWidth;
-                
                 taskInput.style.opacity = "1";
-                taskInput.style.transform = "translateY(0)";
+                taskInput.style.transform = "translate(-50%, -50%)";
                 taskInput.value = "";
-                taskInput.placeholder = "What is the next objective? (optional)";
+                taskInput.placeholder = "What is the next step?";
                 taskInput.focus();
                 isAwaitingTask = true;
-            }, 300); // 300ms matches the CSS transition perfectly
+            }, 400); 
         }
 
-        // PERFECTED: Smooth transition from Input editor to Task text
         function lockInNewTask(text) {
             const newTaskText = text || "Deep Focus";
             activeTaskText = newTaskText;
@@ -398,40 +434,37 @@
             }
 
             taskInput.style.opacity = "0";
-            taskInput.style.transform = "translateY(-10px)";
+            taskInput.style.transform = "translate(-50%, -60%)";
 
             setTimeout(() => {
                 taskInput.style.display = "none";
-                taskDisplayWrapper.style.display = "flex";
-                editTaskBtn.style.display = "block"; 
+                inputGlow.style.display = "none";
                 
                 mainDisplay.className = "main-display text-work text-task";
                 mainDisplay.innerText = activeTaskText;
                 document.title = `🛠 ${activeTaskText}`;
 
-                // Set initial invisible state before fading in
-                mainDisplay.style.opacity = "0";
-                mainDisplay.style.transform = "scale(0.95)";
-                
-                void mainDisplay.offsetWidth; // Force reflow
-                
+                editTaskBtn.style.display = "block"; 
                 mainDisplay.style.opacity = "1";
-                mainDisplay.style.transform = "scale(1)";
-            }, 300);
+                mainDisplay.style.transform = "translate(-50%, -50%) scale(1)";
+            }, 400);
         }
 
         function initiateNewSession() {
+            // Ask for Notification Permissions right as they start their first block!
+            requestNotificationPermission();
+
             sessionGoalText = taskInput.value.trim() || "Deep Work Session";
             activeTaskText = ""; 
             
+            modeLabel.innerText = sessionGoalText;
             modeLabel.style.opacity = "0";
-            modeLabel.style.transform = "translateY(-10px)";
+            modeLabel.style.transform = "translateY(20px)";
             
             setTimeout(() => {
-                modeLabel.innerText = sessionGoalText;
                 modeLabel.style.opacity = "1";
                 modeLabel.style.transform = "translateY(0)";
-            }, 300);
+            }, 50);
 
             const now = Date.now();
             currentSession = {
@@ -439,6 +472,7 @@
                 blocks: [], status: "COMPLETED", sessionGoal: sessionGoalText
             };
             
+            statsLink.style.display = "none";
             startNewFocusBlock(false); 
         }
 
@@ -460,18 +494,30 @@
             timerState = "WORK";
             currentStartTime = now;
             
+            startBtn.style.display = "none";
+            startBtn.style.opacity = "0";
+            settingsBtn.style.display = "none";
+            settingsPanel.style.display = "none";
+            
+            restBtn.style.display = "block";
+            endBtn.style.display = "inline-block";
+            setTimeout(() => { 
+                restBtn.style.opacity = "1"; 
+                endBtn.style.opacity = "0.7"; 
+            }, 50);
+            
             if (!returningFromBreak) {
                 taskInput.style.opacity = "0";
+                taskInput.style.transform = "translate(-50%, -60%)";
                 
                 setTimeout(() => {
-                    taskDisplayWrapper.style.display = "none";
-                    taskInput.style.display = "block";
                     taskInput.value = "";
-                    taskInput.placeholder = "What problem are you solving? (optional)";
+                    taskInput.placeholder = "What is the immediate next step?";
+                    taskInput.style.transform = "translate(-50%, -40%)";
                     
                     void taskInput.offsetWidth;
                     taskInput.style.opacity = "1";
-                    taskInput.style.transform = "translateY(0)";
+                    taskInput.style.transform = "translate(-50%, -50%)";
                     taskInput.focus();
                     isAwaitingTask = true;
 
@@ -479,14 +525,14 @@
                     taskPromptTimeout = setTimeout(() => {
                         if (isAwaitingTask) lockInNewTask(taskInput.value.trim()); 
                     }, 60000);
-                }, 300);
+                }, 400);
             } else {
                 mainDisplay.style.opacity = "0";
-                mainDisplay.style.transform = "scale(0.95)";
+                mainDisplay.style.transform = "translate(-50%, -50%) scale(0.95)";
 
                 setTimeout(() => {
                     taskInput.style.display = "none";
-                    taskDisplayWrapper.style.display = "flex";
+                    inputGlow.style.display = "none";
                     editTaskBtn.style.display = "block"; 
                     
                     mainDisplay.className = "main-display text-work text-task";
@@ -495,18 +541,17 @@
 
                     void mainDisplay.offsetWidth;
                     mainDisplay.style.opacity = "1";
-                    mainDisplay.style.transform = "scale(1)";
-                }, 300);
+                    mainDisplay.style.transform = "translate(-50%, -50%) scale(1)";
+                }, 400);
             }
             
             modeLabel.innerText = sessionGoalText;
-            modeLabel.className = "mode-label text-work";
-            targetLabel.innerText = "";
             ambientLight.style.background = "radial-gradient(circle, rgba(10, 132, 255, 0.15) 0%, transparent 60%)";
             
+            progressWrapper.style.opacity = "1";
             progressBar.style.width = "100%";
             progressBar.className = "progress-fill bg-work indeterminate";
-            startBtn.className = "btn-rest"; restBtn.className = "btn-rest bg-rest"; 
+
             startClock();
         }
 
@@ -543,36 +588,35 @@
             if (taskPromptTimeout) clearTimeout(taskPromptTimeout);
             isAwaitingTask = false;
             
+            restBtn.style.opacity = "0";
+            setTimeout(() => {
+                restBtn.style.display = "none";
+                startBtn.style.display = "block";
+                settingsBtn.style.display = "block";
+                setTimeout(() => { startBtn.style.opacity = "1"; }, 50);
+            }, 400);
+            
             mainDisplay.style.opacity = "0";
-            mainDisplay.style.transform = "scale(0.95)";
-            if (taskInput.style.display !== "none") {
-                taskInput.style.opacity = "0";
-            }
+            mainDisplay.style.transform = "translate(-50%, -50%) scale(0.95)";
+            if (taskInput.style.display !== "none") { taskInput.style.opacity = "0"; }
 
             setTimeout(() => {
                 taskInput.style.display = "none";
-                taskDisplayWrapper.style.display = "flex";
+                inputGlow.style.display = "none";
                 editTaskBtn.style.display = "none"; 
                 mainDisplay.className = "main-display text-rest";
                 mainDisplay.innerText = "00:00";
 
                 void mainDisplay.offsetWidth;
                 mainDisplay.style.opacity = "1";
-                mainDisplay.style.transform = "scale(1)";
-            }, 300);
+                mainDisplay.style.transform = "translate(-50%, -50%) scale(1)";
+            }, 400);
 
-            modeLabel.style.opacity = "0";
-            setTimeout(() => {
-                modeLabel.innerText = "RESTING • " + sessionGoalText;
-                modeLabel.className = "mode-label text-rest";
-                modeLabel.style.opacity = "1";
-            }, 300);
-            
-            targetLabel.innerText = `Earned: ${formatTime(plannedBreakSec)}`;
+            modeLabel.innerText = "RESTING • " + sessionGoalText;
             ambientLight.style.background = "radial-gradient(circle, rgba(255, 159, 10, 0.15) 0%, transparent 60%)";
             
             progressBar.className = "progress-fill bg-rest"; progressBar.style.width = "0%";
-            startBtn.className = "btn-work"; restBtn.className = "btn-rest"; 
+            
             startClock();
         }
 
@@ -604,26 +648,36 @@
             if (taskPromptTimeout) clearTimeout(taskPromptTimeout);
 
             mainDisplay.style.opacity = "0";
+            modeLabel.style.opacity = "0";
+            progressWrapper.style.opacity = "0";
+            restBtn.style.opacity = "0";
+            startBtn.style.opacity = "0";
+            endBtn.style.opacity = "0";
+            settingsBtn.style.opacity = "0";
+            settingsPanel.style.display = "none";
+
             setTimeout(() => {
-                taskDisplayWrapper.style.display = "none";
+                restBtn.style.display = "none";
+                startBtn.style.display = "none";
+                endBtn.style.display = "none";
+                settingsBtn.style.display = "none";
+                editTaskBtn.style.display = "none";
+                
                 taskInput.style.display = "block";
+                inputGlow.style.display = "block";
                 taskInput.value = "";
-                taskInput.placeholder = "What do you want to do today?";
+                taskInput.placeholder = "What problem are we solving?";
                 void taskInput.offsetWidth;
                 taskInput.style.opacity = "1";
-            }, 300);
+                taskInput.style.transform = "translate(-50%, -50%)";
+                taskInput.focus();
+                
+                statsLink.style.display = "inline-block";
+                
+            }, 400);
             
-            modeLabel.style.opacity = "0";
-            modeLabel.style.transform = "translateY(10px)";
-            setTimeout(() => {
-                modeLabel.innerText = "READY"; modeLabel.className = "mode-label";
-                modeLabel.style.opacity = "1"; modeLabel.style.transform = "translateY(0)";
-            }, 300);
-            
-            targetLabel.innerText = ""; document.title = "Focus & Rest";
+            document.title = "Focus & Rest";
             ambientLight.style.background = "radial-gradient(circle, rgba(10, 132, 255, 0.15) 0%, transparent 60%)";
-            progressBar.className = "progress-fill"; progressBar.style.width = "0%";
-            startBtn.className = "btn-work"; restBtn.className = "btn-rest";
         }
 
         window.addEventListener('beforeunload', () => {
@@ -655,11 +709,16 @@
                     progressBar.style.width = `${fill}%`;
 
                     if (elapsed >= plannedBreakSec && !alertShown) {
-                        alertShown = true; chime.play();
-                        modeLabel.innerText = "TIME UP"; modeLabel.className = "mode-label text-end";
-                        mainDisplay.className = "main-display text-end"; progressBar.className = "progress-fill bg-end";
+                        alertShown = true; 
+                        chime.play();
+                        
+                        modeLabel.innerText = "TIME UP • " + sessionGoalText; 
+                        mainDisplay.className = "main-display text-end"; 
+                        progressBar.className = "progress-fill bg-end";
                         ambientLight.style.background = "radial-gradient(circle, rgba(255, 69, 58, 0.15) 0%, transparent 60%)";
-                        setTimeout(() => alert(`Your earned break time is up! Ready to conquer the next problem?`), 100);
+                        
+                        // Fire the Mobile PWA Notification!
+                        sendPushNotification("Time's Up!", "Your earned break is over. Ready to conquer the next problem?");
                     }
                 }
             }, 100);
